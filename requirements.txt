@@ -1,0 +1,10 @@
+# Direct dependencies, pinned to the versions this project was built and tested with.
+langgraph==1.2.18
+langchain-openai==1.7.3
+openai==3.41.0
+qdrant-client==1.20.0
+typesafe-sdk==0.7.5
+deepeval==4.3.2
+python-dotenv==1.2.4
+PyYAML==6.0.3
+pytest==9.2.0

@@ -1,0 +1,83 @@
+# Single source of truth for categories.
+#
+# - `categories`: the label set. Descriptions are read by BOTH classifier backends
+#   (Jev and the LLM fallback), so wording changes here change classification.
+# - `documents`: which categories each document's chunks are tagged with.
+#   The FIRST entry is the primary category; the rest are secondary.
+#   Retrieval filters match ANY of a chunk's categories.
+#
+# Adding a category = add it here, tag the relevant documents, re-run ingestion.
+
+categories:
+  program_policies:
+    description: >-
+      Membership tiers, tier transfers, member code of conduct and installer conduct rules,
+      the general member grievance procedure, data privacy, annual meeting attendance,
+      governance, board elections, voting rights, proxies and quorum.
+  incentive_rebate:
+    description: >-
+      Rooftop Rebate Program, rebate eligibility rules and amounts, Commercial Incentive Program,
+      Battery Storage Add-On Incentive, Low-Income Bill Credit Program eligibility,
+      rebate appeals, program funding and waitlists, application documentation,
+      and reversal of previously approved rebates.
+  billing_account:
+    description: >-
+      Monthly bill calculation, membership fees, bill issue and due dates, missed or late payments,
+      payment methods, autopay and autopay failures, disputing a charge,
+      net metering credits and annual true-up, and billing adjustments.
+  technical_installation:
+    description: >-
+      Site and shading assessment, roof suitability, inverter types, utility interconnection,
+      monitoring and maintenance, fault codes, seasonal performance,
+      installer certification and renewal, and battery storage installation requirements.
+  company_updates:
+    description: >-
+      Newsletters, cooperative news, new board members, staffing changes, community array
+      expansion, awards and recognition, upcoming planned changes, and annual impact figures.
+  non_relevant:
+    description: >-
+      Anything unrelated to SunGrid Cooperative, its membership, programs, billing,
+      solar installations or company news (e.g. weather, sports, general trivia, coding help).
+
+documents:
+  01_program_policies:
+    categories: [program_policies]
+  02_incentive_rebate_programs:
+    categories: [incentive_rebate]
+  03_billing_faqs:
+    categories: [billing_account]
+    note: >-
+      Section "My rebate hasn't appeared on my bill yet" is rebate-related. Not re-tagged at
+      section level; covered by the query-side multi-category filter and unfiltered fallback.
+  04_technical_installation_guidance:
+    categories: [technical_installation]
+  05_company_updates:
+    categories: [company_updates]
+    note: >-
+      States it must not be relied on for eligibility guidance — deliberately NOT tagged
+      incentive_rebate even though it mentions rebate treatment for a future tier.
+  06_ambiguous_rebate_billing_adjustments:
+    categories: [incentive_rebate, billing_account]
+    note: >-
+      Deliberately ambiguous. Members reach it from either side ("my rebate was reversed" vs
+      "why did my bill go up"), so it is tagged with both. Primary is incentive_rebate because
+      the reversal decision and the appeal path both sit with the Incentive Program committee;
+      Billing only executes the repayment schedule.
+  07_installer_certification:
+    categories: [technical_installation, program_policies]
+    note: Installer rules are split between this doc and the Code of Conduct in 01.
+  08_governance_voting:
+    categories: [program_policies]
+  09_battery_storage_incentive:
+    categories: [incentive_rebate]
+  10_low_income_bill_credit:
+    categories: [incentive_rebate, billing_account]
+    note: An eligibility-based program that is paid out as a monthly bill line item.
+  11_net_metering_trueup:
+    categories: [billing_account]
+  12_autopay_failure_policy:
+    categories: [billing_account]
+  13_battery_storage_installation:
+    categories: [technical_installation]
+  14_annual_impact_report:
+    categories: [company_updates]

@@ -1,0 +1,22 @@
+# Secrets — never commit real keys
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local vector store (rebuilt by scripts/ingest.py)
+.qdrant/
+
+# DeepEval local run cache
+.deepeval/
+.deepeval*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
