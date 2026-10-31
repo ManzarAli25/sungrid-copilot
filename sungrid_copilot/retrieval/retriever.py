@@ -34,15 +34,15 @@ class RetrievalResult:
     used_fallback: bool  # True if the unfiltered search was used instead
 
 
-def _search(vector: list[float], categories: list[str] | None, k: int) -> list[RetrievedChunk]:
-    query_filter = None
-    if categories:
-        query_filter = models.Filter(
-            must=[models.FieldCondition(key="categories", match=models.MatchAny(any=categories))]
-        )
-    hits = get_client().query_points(
-        get_settings().qdrant_collection, query=vector, query_filter=query_filter, limit=k
-    ).points
+def _category_filter(categories: list[str] | None) -> models.Filter | None:
+    if not categories:
+        return None
+    return models.Filter(
+        must=[models.FieldCondition(key="categories", match=models.MatchAny(any=categories))]
+    )
+
+
+def _to_chunks(points) -> list[RetrievedChunk]:
     return [
         RetrievedChunk(
             chunk_id=h.payload["chunk_id"],
@@ -51,8 +51,27 @@ def _search(vector: list[float], categories: list[str] | None, k: int) -> list[R
             categories=h.payload["categories"],
             score=h.score,
         )
-        for h in hits
+        for h in points
     ]
+
+
+def _search(vector: list[float], categories: list[str] | None, k: int) -> list[RetrievedChunk]:
+    hits = get_client().query_points(
+        get_settings().qdrant_collection, query=vector, query_filter=_category_filter(categories), limit=k
+    ).points
+    return _to_chunks(hits)
+
+
+def _search_filtered_and_unfiltered(
+    vector: list[float], categories: list[str], k: int
+) -> tuple[list[RetrievedChunk], list[RetrievedChunk]]:
+    """Both searches in one round trip to Qdrant."""
+    requests = [
+        models.QueryRequest(query=vector, filter=_category_filter(categories), limit=k, with_payload=True),
+        models.QueryRequest(query=vector, limit=k, with_payload=True),
+    ]
+    filtered, unfiltered = get_client().query_batch_points(get_settings().qdrant_collection, requests=requests)
+    return _to_chunks(filtered.points), _to_chunks(unfiltered.points)
 
 
 def should_override_filter(filtered: list[RetrievedChunk], unfiltered: list[RetrievedChunk]) -> bool:
@@ -63,8 +82,7 @@ def should_override_filter(filtered: list[RetrievedChunk], unfiltered: list[Retr
 
 def retrieve(query: str, categories: list[str], k: int = TOP_K) -> RetrievalResult:
     vector = embed_query(query)  # embedded once; both searches reuse it
-    filtered = _search(vector, categories, k)
-    unfiltered = _search(vector, None, k)
+    filtered, unfiltered = _search_filtered_and_unfiltered(vector, categories, k)
     if should_override_filter(filtered, unfiltered):
         return RetrievalResult(unfiltered, categories, used_fallback=True)
     return RetrievalResult(filtered, categories, used_fallback=False)

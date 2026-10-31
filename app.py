@@ -101,9 +101,10 @@ def ask(query: str) -> None:
         return
     st.session_state.turns += 1
     config = {"configurable": {"thread_id": st.session_state.thread_id}}
+    graph = get_graph()  # outside the timer: loading the agent is start-up cost, not answer latency
     start = time.perf_counter()
     try:
-        state = get_graph().invoke({"query": query}, config)
+        state = graph.invoke({"query": query}, config)
     except Exception as exc:  # surface API/network errors in the UI instead of a stack trace
         st.session_state.messages.append({"role": "assistant", "content": f"⚠️ Error: {exc}"})
         return
@@ -127,6 +128,10 @@ def render_details(d: dict) -> None:
         c2.metric("Primary category", d.get("category", "—"))
         c3.metric("Intent", (d.get("intent") or "—").replace("_", " "))
         c4.metric("Latency", f"{d.get('latency_s', 0)} s")
+
+        if d.get("timings"):
+            steps = " → ".join(f"{name} {secs}s" for name, secs in d["timings"].items())
+            st.caption(f"⏱️ Per step: {steps}")
 
         if d.get("standalone_query") and d.get("standalone_query") != d.get("query"):
             st.markdown(f"**Rewritten follow-up:** _{d['standalone_query']}_")
@@ -351,6 +356,11 @@ def main() -> None:
     if not get_settings().openrouter_api_key:
         st.error("OPENROUTER_API_KEY is not set. See `.env.example`.")
         st.stop()
+    # Warm-up: import and build the agent once per server process, before the first question.
+    # On a small instance this takes tens of seconds; cached afterwards for every session.
+    with st.spinner("Loading the copilot (first visit after a restart takes a little longer)…"):
+        get_graph()
+        get_chunks()
     sidebar()
     tabs = st.tabs(["💬 Copilot", "🧭 How it works", "📚 Knowledge base", "📊 Evaluation"])
     with tabs[0]:

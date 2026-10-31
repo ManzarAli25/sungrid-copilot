@@ -12,7 +12,8 @@
 """
 
 import operator
-from typing import Annotated, TypedDict
+import time
+from typing import Annotated, Callable, TypedDict
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
@@ -43,6 +44,20 @@ class AgentState(TypedDict, total=False):
     used_fallback: bool
     tool_calls: list[dict]
     answer: str
+    timings: dict  # seconds per node for this turn (shown in the UI)
+
+
+def _timed(name: str, node: Callable[[AgentState], dict], first: bool = False):
+    """Wrap a node to record its duration in state["timings"]. The first node of a turn
+    starts a fresh dict; the graph is sequential, so later nodes extend it."""
+
+    def wrapper(state: AgentState) -> dict:
+        start = time.perf_counter()
+        update = node(state)
+        previous = {} if first else (state.get("timings") or {})
+        return {**update, "timings": {**previous, name: round(time.perf_counter() - start, 2)}}
+
+    return wrapper
 
 
 def _finish(state: AgentState, route: str, answer: str, **extra) -> dict:
@@ -136,16 +151,16 @@ def decline_node(state: AgentState) -> dict:
 
 def build_graph(checkpointer=None):
     g = StateGraph(AgentState)
-    g.add_node("contextualize", contextualize_node)
-    g.add_node("classify", classify_node)
-    g.add_node("detect_intent", intent_node)
-    g.add_node("extract_params", extract_params_node)
-    g.add_node("ask_for_missing", ask_for_missing_node)
-    g.add_node("check_eligibility", check_eligibility_node)
-    g.add_node("compose_verdict", compose_verdict_node)
-    g.add_node("retrieve", retrieve_node)
-    g.add_node("generate_answer", generate_answer_node)
-    g.add_node("decline", decline_node)
+    g.add_node("contextualize", _timed("contextualize", contextualize_node, first=True))
+    g.add_node("classify", _timed("classify", classify_node))
+    g.add_node("detect_intent", _timed("detect_intent", intent_node))
+    g.add_node("extract_params", _timed("extract_params", extract_params_node))
+    g.add_node("ask_for_missing", _timed("ask_for_missing", ask_for_missing_node))
+    g.add_node("check_eligibility", _timed("check_eligibility", check_eligibility_node))
+    g.add_node("compose_verdict", _timed("compose_verdict", compose_verdict_node))
+    g.add_node("retrieve", _timed("retrieve", retrieve_node))
+    g.add_node("generate_answer", _timed("generate_answer", generate_answer_node))
+    g.add_node("decline", _timed("decline", decline_node))
 
     g.add_edge(START, "contextualize")
     g.add_edge("contextualize", "classify")
