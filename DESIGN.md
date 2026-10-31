@@ -1,111 +1,129 @@
 # SunGrid Copilot: Design Notes (Part C)
 
-The system: section-level chunks with context headers in Qdrant; a query classifier (TypeSafe
-Jev, with an LLM fallback) whose output only filters retrieval; and a LangGraph agent that
-routes eligibility questions to the unmodified eligibility service behind a code-level hard
-gate. Numbers below come from `evals/` unless marked otherwise.
+SunGrid Copilot answers member questions from 14 knowledge-base docs and calls the eligibility
+service for rooftop rebate eligibility. Numbers below come from our eval runs (`evals/`).
 
-## 1. Evaluating before shipping
+## 1. How we'd evaluate it before shipping
 
-**Offline (built).** A 35-case golden set traceable to the documents: RAG per document,
-doc 06 from both sides, cross-category and unanswerable questions, every hard-gate failure,
-missing or vague inputs, multi-turn follow-ups, and off-topic questions. Two layers:
+We wrote tests alongside each part as we built it (31 unit and guard tests now), so every
+piece was checked as soon as it existed: the chunker, the filter rules, the eligibility hard
+gate, and that `stub_tools.py` was never edited.
 
-- **Deterministic checks, wherever code can decide:** category, route, retrieval hit@5, tool
-  called or not, exact tool arguments, verdict, and "ineligible → no amount". All at 100%.
-- **DeepEval LLM judges, for what code can't check:** Faithfulness 0.99, Answer Relevancy
-  0.96, Contextual Precision 0.95, Contextual Recall 1.00, Tool Correctness 1.00, and a
-  G-Eval hard-gate rubric at 1.00. The judge is a different model family from the agent.
+On top of that we built a golden set of 35 questions written from the docs and checked it
+two ways:
 
-**Checking the judge itself.** A planted leaky answer scores 0.0 on the hard-gate rubric (a
-negative control). DeepEval's `llm` and `hybrid` (Jev-decided) modes disagreed by up to 0.2
-on the same metric. Reading the failures showed `hybrid` explanations quoting probabilities
-that weren't in the answers, so `llm` is the default. Three of the first five eval findings
-were defects in the eval (rubric wording, golden answers, judge mode), not the product.
+- **Exact checks in code:** right category, right route, the right chunk retrieved, the tool
+  called with the right inputs, and no amount when someone isn't eligible. All at 100%.
+- **DeepEval metrics with an LLM judge**, for what code can't check: Faithfulness 0.99, Answer
+  Relevancy 0.96, Contextual Precision 0.95, Contextual Recall 1.00, Tool Correctness 1.00,
+  and a G-Eval rubric for the hard gate at 1.00.
 
-**Repeated runs.** A 7% extraction failure passed one run and failed the next. Critical
-behaviours (installer-approval extraction, option-order bias) were probed 30× or by
-reordering, and the release gate should track pass rates over N runs, not single results.
+We first ran the DeepEval metrics in hybrid mode, where Jev makes the yes/no calls and the LLM
+writes the reasons. The results looked off, so we ran the same metrics with the LLM alone and
+read the failures ourselves. The LLM judge was right: hybrid marked correct answers as
+unfaithful (0.84 vs 0.99) and quoted probabilities that weren't in our answers, and it gave
+padded answers 0.98 for relevancy where the LLM judge caught it (0.76, going up to 0.96 once
+we fixed the padding). So the LLM is the default judge.
 
-**Ship gate:** hard gate and tool correctness at 100% over repeated runs, no deterministic
-regressions, Faithfulness ≥ 0.9, and a human read of every judge failure.
+What surprised me most: Jev is fast and reliable for short decisions like category and intent,
+but as a judge it wasn't reliable when the decision needs a lot of text, like checking every
+claim against five retrieved chunks. That matches TypeSafe's own note that accuracy drops when
+the input has a lot of unrelated content. (One comparison on 23 cases, so a finding, not a
+rule.)
 
-**Online (to add).** Every turn already records category probabilities, filter, fallback,
-tool input/output and per-step timings. In production: log these with the answer; monitor
-**filter-override rate** (rising means classifier or content drift), low-margin
-classifications, "not in the excerpts" answers (knowledge gaps), eligibility asks that never
-complete, latency per step, and cost per turn. Sample live conversations for offline DeepEval
-scoring and human review, and add failures to the golden set.
+With all of that passing, we'd ship it as a pilot.
+
+**Once it's live:** we'd add monitoring with Pydantic Logfire, which the prototype doesn't have
+yet, and watch:
+
+- **Low-confidence categories:** how often the top category is below a set level, meaning the
+  classifier is unsure and retrieval may be searching the wrong place.
+- **"Not in the docs" answers:** questions the knowledge base can't answer, i.e. content gaps.
+- **Abandoned eligibility checks:** the agent asked for details and the member never finished,
+  which points to a confusing question or too many questions.
+- **Latency per step:** the per-node timings the app already records.
+- **Cost per conversation:** each question makes several model calls.
+
+Conversations that look wrong get reviewed and added to the golden set, so it keeps growing
+from real member questions.
 
 ## 2. What breaks first at scale
 
-**10x documents (~140 docs, ~700 chunks).** Qdrant is not the bottleneck: 700 or 70k vectors
-with payload indexes is trivial. What breaks first is **the human-curated layer**: hand-written
-document→category tags and golden labels, and chunking that assumes tidy `##` sections.
-Changes: tag at section level, with Jev proposing tags at ingest time and people reviewing
-low-confidence ones; structure-aware splitting with the existing size guard for long or messy
-sources (PDFs); a **reranker** once near-duplicate chunks crowd the top 5; turning the explicit
-cross-references ("as described in the Billing FAQs") into metadata that pulls the referenced
-section in; and a golden set grown from sampled real queries rather than hand-written ones.
+**10x documents.** Right now we have 14 docs and 69 chunks, every doc was tagged by hand in
+`config/categories.yaml`, and the chunker assumes clean `##` sections. Both stop working at
+10x: tagging 140 docs by hand is slow and easy to get wrong, and real documents (PDFs, long
+pages, missing headings) won't follow our structure, because real life is messy. What we'd
+change:
 
-**100x queries.** Each question makes 4–5 external model calls (rewrite on follow-ups, two
-Jev decisions, an embedding, generation). What breaks first is **provider rate limits and
-cost**, then **in-process state**: conversation memory is in RAM (`InMemorySaver`), and the
-UI and agent share one Streamlit process. Changes: a persistent checkpointer (Postgres/Redis)
-and a stateless agent API behind the UI, scaled horizontally; both Jev questions in **one
-request** (it answers several questions in parallel) and running classification and the
-embedding concurrently (about 2 s measured headroom per turn); a semantic cache for frequent
-questions; skipping the rewrite when a message is already standalone; per-user rate limits;
-and retries with fallbacks per provider (the LLM classifier fallback already exists).
+- New chunker rules for documents that don't follow the current structure.
+- A reranker, because more documents means more chunks that look almost the same and crowd
+  the top 5.
+- Grow the golden set from real member questions instead of writing every case by hand.
 
-## 3. Adding a new document category
+**100x queries.** Haiku and Jev are already small, fast and cheap models, so cost and speed per
+question should hold up. What needs work is handling many requests at once. Conversation memory
+lives in the agent's RAM (LangGraph's `InMemorySaver`), so it's lost on a restart and can't be
+shared if we run more than one copy of the agent. We'd move it to Redis, which also gives us a
+queue for background jobs so slow requests don't block the rest.
 
-The design treats categories as data, so most of the system stays the same:
+**What we built so it doesn't break.**
 
-| Changes | Stays the same |
-|---|---|
-| One entry in `config/categories.yaml` (name + description) | Graph, nodes, prompts, retriever |
-| Tag new/affected documents, re-run ingestion (idempotent upserts) | Classifier code: Jev reads the YAML, **no retraining** |
-| New golden cases; re-run evals and the strict/widened comparison | Filter mechanics (`MatchAny`) and override logic |
-| Possibly re-tune the 0.10 widening and 0.10 override margins | Eligibility path and hard gate |
+- **Re-runnable ingestion:** each chunk gets a fixed ID from its doc and section name, so
+  re-running ingestion updates chunks instead of duplicating them and removes chunks for
+  deleted sections. It can run on a schedule as documents change.
+- **A size guard in the chunker:** sections over 300 words are already split by paragraph. It
+  doesn't trigger on today's docs, but it's the starting point for the new chunker rules.
+- **Per-step timings on every question:** each answer records how long each step took, so at
+  100x we can see which step is the bottleneck instead of guessing.
+- **A switchable classifier:** if Jev hits rate limits or goes down, `CLASSIFIER_BACKEND=llm`
+  keeps everything running without a code change.
 
-A guard test fails if a document is untagged or uses an undefined category. The category
-description is the classifier's only definition of the category, so its wording needs testing
-like code. **Out of scope of "just data":** a category that needs its own tool or
-service (a new eligibility check) is a new intent plus a new node, which is real code.
+## 3. Adding a new category
 
-## 4. Non-obvious trade-off: classifying with a decision model, not the LLM
+Categories are data, not code, so adding one is mostly a config change. Say SunGrid adds
+"EV Charging" with 3 new docs:
 
-The obvious design prompts the LLM you already use. I classify category and intent with
-**Jev**, a System One model that returns typed, calibrated decisions instead of text.
+1. Add `ev_charging` with a short description to `config/categories.yaml`. Jev and the LLM
+   classifier both read their categories from this file, so nothing else needs to know about it.
+2. Add the docs and tag them. Check if any existing doc overlaps (like we tagged doc 06 with
+   two categories). A guard test fails if a doc is untagged or uses a category that doesn't exist.
+3. Re-run ingestion. It's re-runnable, so it only adds and updates chunks.
+4. Add EV questions to the golden set and run the evals. The description is the only thing
+   telling the classifier what the category means, so it needs testing like code.
+5. Re-tune the 0.10 widening and override thresholds if the evals say so. They were tuned on
+   today's categories.
 
-**Gained, with the same accuracy.** On 20 golden questions both backends chose the identical
-category every time (22/22 category accuracy each). Jev was **2.5× faster**: 0.68 s vs
-1.67 s median, p90 0.73 s vs 1.99 s. Two decisions per question save about 2 s per turn.
-It is also **~2.8× cheaper per call**: our LLM classification uses 888 input / 30 output
-tokens (~$0.000104), vs ~$0.000037 for the same input at Jev's published price (estimate).
-Its probabilities also became a design input: the 0.84 / 0.16 split on "my rebate hasn't
-shown up on my bill" is the rule for widening the filter (19/22 → 21/22 retrieval hits).
+**What stays the same:** all the code (graph, nodes, prompts, retriever, filter logic,
+eligibility path), and there's no retraining.
 
-**Gave up: explainability.** Jev returns a label and probabilities, never a reason. Calibration
-holds across many predictions, not for each answer, so **a confident answer can still be
-wrong, with no way to trace why**: "What rebate will the new multi-family tier get?" was
-classified `incentive_rebate` at 0.98, while the answer lives in Company Updates. An LLM
-classifier could at least state its reasoning for an audit. Jev also **reads literally**: it
-answers the question as written, so "What if I shrink it to 9 kW?" sent on its own looked
-like a general question, and category quality depends on the exact wording of the
-descriptions.
+**When it's more than config:** if the new category needs its own tool, like the eligibility
+check, that's a new intent and new nodes, which is real code.
 
-**How the design absorbs it.** Retrieval never trusts the label alone: if results outside the
-filter beat the filtered ones by ≥ 0.10, the filter is overridden (this fixed the multi-family
-case). Jev sees a short, purpose-built input (the standalone rewrite plus explicit context such
-as "the member already gave eligibility details"), and never handles numbers, which the LLM
-extracts and code checks. The classifier sits behind one interface with an LLM fallback
-(`CLASSIFIER_BACKEND`), so the project runs without a Jev key.
+## 4. Non-obvious trade-off: Jev instead of the LLM for classification
 
-## Out of scope (deliberately)
+The obvious way to classify a question is to prompt the LLM we already use. We used Jev
+instead, a System One model that only returns a typed answer with probabilities, no text. We
+use it for both the category and the intent.
 
-Authentication and PII handling for member data; persistent conversation memory; production
-monitoring infrastructure (the signals are captured, not shipped anywhere); a reranker;
-cross-reference expansion; multilingual queries; and load testing beyond single-user latency
-measurements.
+**What we gained:** the same accuracy, faster and cheaper. On 20 golden questions both picked
+the same category every time. Jev took 0.68 s (median) vs 1.67 s for the LLM, and with two
+calls per question that saves about 2 s. It's also about 2.8x cheaper per call (the Jev side
+is an estimate from its published price). The probabilities turned out useful too: the
+0.84 / 0.16 split on "my rebate hasn't shown up on my bill" is how we decide to widen the
+filter.
+
+**What we gave up:** explainability. Jev gives a label and probabilities, never a reason. So a
+confident answer can still be wrong, and there's no way to trace why: "What rebate will the new
+multi-family tier get?" was classified `incentive_rebate` at 0.98, but the answer is in Company
+Updates. An LLM could at least explain its choice. Jev also reads literally: "What if I shrink
+it to 9 kW?" on its own looked like a general question, and how well it classifies depends on
+the exact wording of the category descriptions.
+
+**How we handle it:** retrieval doesn't fully trust the label. It overrides the filter when
+better results are outside it, which fixed the multi-family case. And Jev gets the rewritten
+standalone question with context, not the raw message.
+
+## Out of scope
+
+Not covered here: login and handling of members' personal data, the monitoring itself (we
+record the signals but don't send them anywhere yet), multiple languages, and load testing.
