@@ -1,61 +1,160 @@
-# SunGrid Cooperative Copilot
+# SunGrid Copilot
 
-A prototype support copilot for the (fictional) SunGrid solar cooperative. It answers member
-questions with retrieval-augmented generation over an internal knowledge base, and it calls
-a separate eligibility service for rebate-eligibility questions instead of answering them
-from documents.
+A prototype support copilot for SunGrid, a fictional solar cooperative. It answers member
+questions from the 14 knowledge-base docs (RAG), and for rooftop rebate eligibility it calls
+the eligibility service instead of answering from the docs.
 
-**Live demo:** https://sungrid-copilot.onrender.com (password-protected; available on request.
-Free tier, so the first load after a period of inactivity can take up to a minute.)
+Built with LangGraph, Qdrant, OpenRouter (LLM and embeddings), TypeSafe Jev (query classifier,
+with an LLM fallback) and DeepEval (evals).
 
-## Stack
+- **Live demo:** https://sungrid-copilot.onrender.com (password on request; free tier, so the
+  first load can take up to a minute)
+- **Design write-up (Part C):** [`DESIGN.md`](DESIGN.md), also as [`DESIGN.pdf`](DESIGN.pdf)
+- **Evaluation details:** [`evals/README.md`](evals/README.md)
 
-| Concern | Choice |
-|---|---|
-| LLM + embeddings | [OpenRouter](https://openrouter.ai) (OpenAI-compatible API) |
-| Vector store | Qdrant: Cloud free tier, or local embedded mode with no account |
-| Query classifier | TypeSafe **Jev** (typed decision model), with an LLM fallback |
-| Agent framework | LangGraph |
-| Evaluation | DeepEval |
+## 1. Install
 
-## Project layout
-
-```
-config/categories.yaml        category definitions + document→category tags (source of truth)
-data/docs/                    the 14 knowledge-base documents
-sungrid_copilot/
-  config.py                   settings from environment / .env
-  ingestion/                  chunking + embedding + upsert into Qdrant
-  retrieval/                  category-filtered vector search
-  classifier/                 query → category (Jev or LLM backend)
-  agent/                      LangGraph agent
-  integrations/stub_tools.py  eligibility service stub (unmodified, owned by "another team")
-scripts/                      CLI entry points (ingest, ask)
-evals/                        DeepEval test suite
-tests/                        unit + guard tests
-```
-
-## Setup
-
-Requires Python 3.10+.
+You need Python 3.10 or newer.
 
 ```bash
+git clone https://github.com/ManzarAli25/sungrid-copilot.git
+cd sungrid-copilot
 python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env               # then fill in OPENROUTER_API_KEY (the only required key)
 ```
 
-| Variable | Required | Notes |
+## 2. Configure
+
+Copy the example config and add your keys. `.env` is git-ignored, so keys never get committed.
+
+```bash
+cp .env.example .env
+```
+
+Only the OpenRouter key is required. Everything else has a working default.
+
+| Variable | Required | What it does |
 |---|---|---|
-| `OPENROUTER_API_KEY` | yes | Used for chat, embeddings and the eval judge |
-| `QDRANT_URL`, `QDRANT_API_KEY` | no | Leave empty to use local embedded Qdrant |
-| `TYPESAFE_API_KEY` | no | Leave empty to classify with the LLM fallback |
+| `OPENROUTER_API_KEY` | yes | Chat model, embeddings and the eval judge |
+| `QDRANT_URL`, `QDRANT_API_KEY` | no | Qdrant Cloud. Leave empty to run Qdrant locally (no account needed) |
+| `TYPESAFE_API_KEY` | no | Jev classifier. Leave empty to classify with the LLM instead |
+| `CLASSIFIER_BACKEND` | no | `auto` (default: Jev if there's a key, else LLM), `jev` or `llm` |
+| `FILTER_MODE` | no | `widened` (default) or `strict`, see assumption 1 |
+| `APP_PASSWORD` | no | Password for the web UI. Set it for any public deployment |
 
-## Agent graph
+Models are set in `.env.example` too (`LLM_MODEL`, `JUDGE_MODEL`, `EMBEDDING_MODEL`).
 
-Generated from the compiled LangGraph graph with `python -m scripts.draw_graph`. Solid arrows
-are fixed edges and dotted arrows are conditional edges.
+## 3. Run it end to end
+
+**1. Build the vector store.** Chunks the docs, embeds them and stores them in Qdrant. It's safe
+to re-run: it updates chunks instead of duplicating them.
+
+```bash
+python -m scripts.ingest              # add --recreate to rebuild from scratch
+```
+
+**2. Ask questions from the terminal.**
+
+```bash
+python -m scripts.ask "When are bills issued?"
+python -m scripts.ask                 # interactive chat, remembers the conversation
+python -m scripts.ask --debug "..."   # also shows category, filter, route, chunks and tool calls
+```
+
+Try an eligibility question like *"Am I eligible for the rooftop rebate? ZIP 94103, income
+90k, 6 kW, approved installer"*, then follow up with *"what if it were 12 kW?"*.
+
+**3. Or use the web UI.**
+
+```bash
+streamlit run app.py                  # http://localhost:8501
+```
+
+It has the chat with an "under the hood" panel for every answer (category probabilities,
+filter, retrieved chunks, tool input/output, timings per step), the agent graph, the knowledge
+base with its category tags, and the latest eval results. To deploy it on Render, create a
+Blueprint from this repo (`render.yaml`) and use Qdrant Cloud, since Render's disk is wiped on
+restart.
+
+**4. Run the tests.** No API keys needed.
+
+```bash
+pytest
+```
+
+**5. Run the evals.**
+
+```bash
+python -m evals.run_evals                  # 35 golden questions: exact checks + DeepEval metrics
+python -m evals.run_evals --skip-deepeval  # exact checks only, no judge cost
+python -m evals.run_evals --compare        # Jev vs LLM, strict vs widened filter
+```
+
+Latest run: 100% on every exact check (category, route, retrieval, tool inputs, verdict, hard
+gate). DeepEval: Faithfulness 0.99, Answer Relevancy 0.96, Contextual Precision 0.95,
+Contextual Recall 1.00, Tool Correctness 1.00, hard-gate G-Eval 1.00.
+
+## 4. Assumptions
+
+**1. One primary category, but the filter can include a second one.** The brief asks for one
+primary category used as the retrieval filter. The classifier always gives exactly one primary
+category. But by default we also add any other category with probability ≥ 0.10 to the filter.
+The reason: for *"My rebate hasn't shown up on my bill, who do I contact?"* Jev says
+`incentive_rebate 0.84 / billing_account 0.16`, and the right answer is in the Billing FAQs.
+Filtering on the primary category alone hides it (top hit 0.588, the wrong section). With the
+second category it comes first (0.748). Across 22 questions, the filter alone finds the right
+chunk 19/22 times in strict mode vs 21/22 widened. It's still a filter, not routing: every
+question goes through the same retrieval step. `FILTER_MODE=strict` gives the literal behaviour.
+
+**2. Off-topic questions skip retrieval.** If the category is `non_relevant` there's nothing to
+filter on, so the copilot politely declines instead of searching.
+
+**3. Ambiguous docs get more than one category.** Doc 06 (rebate reversal / billing adjustment),
+doc 07 (installer certification) and doc 10 (low-income bill credit) each have two categories.
+The reason for each is written next to it in `config/categories.yaml`. Doc 06's primary category
+is `incentive_rebate`, because the Incentive Program committee makes the reversal decision and
+handles appeals; Billing only runs the repayment schedule.
+
+**4. Better results outside the filter win.** Retrieval runs a filtered and an unfiltered search
+together. We use the unfiltered results if the filtered ones are weak (best score below 0.45) or
+if the best result outside the filter beats the best filtered one by 0.10 or more. We added the
+second rule after the evals showed *"What rebate will the new multi-family tier get?"*
+classified `incentive_rebate` at 0.98, while the answer is in Company Updates (0.669 vs 0.530).
+
+**5. Eligibility inputs are never guessed.** Anything the member didn't say is asked for, not
+assumed. "My installer is great" doesn't count as approved. The LLM doesn't call the tool
+itself, because tool-calling models tend to fill missing arguments with guesses.
+
+**6. The eligibility service only reports the first failed check.** If a household fails income
+and system size, they hear one reason. That's how the stub works, and we didn't change it.
+
+**7. The tool only covers the rooftop rebate.** Questions about the battery add-on or the
+low-income credit are answered from the docs.
+
+**8. The income threshold isn't in the docs.** The docs only say it's published every year, so
+the copilot says that instead of quoting the stub's internal `$120,000`.
+
+## Project structure
+
+```
+config/categories.yaml        categories and which docs belong to them (with reasons)
+data/docs/                    the 14 knowledge-base docs
+sungrid_copilot/
+  config.py                   settings from .env
+  ingestion/                  chunking, embedding, storing in Qdrant
+  retrieval/                  filtered vector search with fallback
+  classifier/                 question → category (Jev or LLM)
+  agent/                      the LangGraph agent
+  integrations/stub_tools.py  the eligibility service stub, unmodified
+scripts/                      ingest, ask, draw_graph
+evals/                        golden set, eval runner, results
+tests/                        unit and guard tests
+app.py                        Streamlit web UI
+```
+
+The agent graph, generated from the code with `python -m scripts.draw_graph`. Solid arrows are
+fixed edges, dotted arrows are conditional.
 
 <!-- agent-graph:start -->
 ```mermaid
@@ -96,128 +195,3 @@ graph TD;
 	classDef last fill:#bfb6fc
 ```
 <!-- agent-graph:end -->
-
-| Node | Responsibility |
-|---|---|
-| `contextualize` | Rewrites a follow-up ("how long do I have to appeal *that*?") into a standalone question using the last 3 exchanges. Skipped on the first turn. The rewrite drives classification, intent and retrieval |
-| `classify` | Standalone query → one primary category plus retrieval filter (Jev or LLM). **Never chooses the path.** |
-| `detect_intent` | The routing decision: eligibility check, general question, or off-topic. Aware of the conversation, so "what if it were 9 kW?" re-runs the check |
-| `extract_params` | LLM structured extraction of the 4 eligibility inputs. All are optional, so nothing is guessed. Reads the member's **raw** message plus the question just asked (so "yes they're approved" resolves), never earlier values |
-| `ask_for_missing` | Asks only for the missing inputs. The values given so far persist in the conversation thread |
-| `check_eligibility` | **The only node that calls the eligibility service** (`stub_tools.check_rebate_eligibility`, unmodified) |
-| `compose_verdict` | Hard gate: the verdict text comes from a code template, and an ineligible result never includes an amount |
-| `retrieve` → `generate_answer` | Category-filtered vector search, then a grounded answer that cites its sources |
-| `decline` | Polite refusal for off-topic queries |
-
-## Running
-
-```bash
-python -m scripts.ingest              # build/refresh the vector store (idempotent; --recreate to rebuild)
-python -m scripts.ask "When are bills issued?"
-python -m scripts.ask                 # interactive multi-turn chat
-python -m scripts.ask --debug ...     # also show category, filter, route, sources and tool calls
-python -m scripts.draw_graph          # print the agent graph as Mermaid
-pytest                                # unit + guard tests (no API keys needed)
-```
-
-### Web UI (Streamlit)
-
-```bash
-streamlit run app.py      # http://localhost:8501
-```
-
-Four tabs: **Copilot** (chat with an "under the hood" panel per answer showing the rewritten
-query, category probabilities, retrieval filter, retrieved chunks with scores, fallback, and the
-eligibility tool's input and output), **How it works** (live agent graph), **Knowledge base**
-(documents, category tags and the reasons for them, chunks) and **Evaluation** (latest results).
-
-**Deploying to Render:** push the repo, then in Render choose *New → Blueprint* and select it.
-`render.yaml` defines the service. Enter `OPENROUTER_API_KEY`, `QDRANT_URL`, `QDRANT_API_KEY`,
-`TYPESAFE_API_KEY` and **`APP_PASSWORD`** when prompted. Use Qdrant Cloud (already ingested),
-because Render's disk is ephemeral. `APP_PASSWORD` gates the app so a public URL can't spend
-your API credits, and `MAX_TURNS_PER_SESSION` (default 40) caps each session. Vercel isn't
-suitable: Streamlit needs a long-running server with WebSockets, not serverless functions.
-
-### Evaluation
-
-```bash
-python -m evals.run_evals                  # 35 golden cases: deterministic checks + DeepEval metrics
-python -m evals.run_evals --skip-deepeval  # deterministic checks only (no judge cost)
-python -m evals.run_evals --compare        # classifier backend x filter mode experiment
-```
-
-Latest run: **100% on every deterministic check** (category, route, retrieval hit@5, tool
-arguments, verdict, hard gate). DeepEval: Faithfulness 0.99, Answer Relevancy 0.96, Contextual
-Precision 0.95, Contextual Recall 1.00, Tool Correctness 1.00, hard-gate G-Eval 1.00.
-Methodology, the judge-mode comparison and what the evals changed are in
-[`evals/README.md`](evals/README.md).
-
-## Assumptions
-
-### 1. Single primary category, but the retrieval filter can be widened
-The brief asks for a classifier that assigns **a single primary category** and uses
-**that category** as a retrieval filter. The classifier always outputs exactly one primary
-category (`Classification.primary`).
-
-By default (`FILTER_MODE=widened`), the retrieval filter **also includes any runner-up
-category with probability ≥ 0.10** (at most 3 categories). This departs from the most literal
-reading of the brief on purpose:
-
-- **Evidence:** for *"My rebate hasn't shown up on my bill, who do I contact?"* Jev returns
-  `incentive_rebate 0.84 / billing_account 0.16`. The correct answer is in the **Billing & Account
-  FAQs** doc. Filtering on the primary category alone hides it, and the top hit becomes a
-  related but wrong section (score 0.588). The widened filter returns the exact answer
-  first (score 0.748).
-- **Why it's still a filter, not routing:** every relevant query runs the same retrieval step.
-  The category only narrows which chunks are searched.
-- **Literal behaviour is one setting away:** `FILTER_MODE=strict` filters on the primary category
-  only. Measured on 22 RAG cases, the filter alone retrieves the right chunk in **19/22 (strict)
-  vs 21/22 (widened)**. With the fallback (assumption 4), both reach 22/22.
-
-### 2. `non_relevant` queries skip retrieval
-There is no category to filter to, so the copilot declines politely instead of searching.
-
-### 3. Ambiguous documents are tagged with several categories
-Doc 06 (rebate reversal / billing adjustment), doc 07 (installer certification) and doc 10
-(low-income bill credit) are tagged with more than one category. The reasoning for each is
-recorded next to the tag in `config/categories.yaml`. Doc 06's **primary** category is
-`incentive_rebate`, because both the reversal decision and the appeal path belong to the
-Incentive Program committee; Billing only executes the repayment schedule.
-
-### 4. The filter can be overridden by clearly better evidence
-Retrieval always runs a filtered and an unfiltered search (one embedding, two vector queries).
-The unfiltered results are used when:
-- **absolute:** the best filtered hit scores below 0.45 (cosine). From a small probe, relevant
-  queries scored 0.49–0.75 and an off-topic query scored 0.15; or
-- **relative:** the best unfiltered hit beats the best filtered hit by ≥ 0.10. Added after the
-  golden set showed *"What rebate will the new multi-family tier get?"* confidently classified
-  `incentive_rebate` (0.98), while the answer is in Company Updates (0.669 vs 0.530).
-
-So the category acts as a strong preference, not a wall. Both thresholds were tuned on small
-probes and are validated by the eval suite, not treated as final.
-
-### 5. Eligibility inputs are never guessed
-All four eligibility inputs are optional during extraction. Anything the member didn't state
-is asked for, not inferred. "My installer is great" is not approval. The LLM never calls the
-tool directly, because tool-calling models tend to fill required arguments with plausible guesses.
-
-## Known limitations
-
-- **The eligibility service reports only the first failed check.** A household failing both
-  income and system size hears about one reason. That's the stub's behaviour, deliberately
-  unchanged.
-- **The tool covers the Rooftop Rebate only.** Battery add-on and low-income credit questions
-  are answered from documents. Their eligibility can't be checked by a tool.
-- **The income threshold value isn't in the documents** (only that it's "published annually").
-  The copilot says so rather than quoting the stub's internal `$120,000`.
-- **Conversation state is in memory** (`InMemorySaver`). It's lost on restart. Production would
-  use a persistent checkpointer (Postgres/Redis).
-- **Each follow-up turn costs one extra LLM call** for query rewriting. First turns cost nothing extra.
-- **Thresholds (0.10 widening, 0.45 / 0.10 fallback) are tuned on a small set.** They're
-  sensible defaults with eval evidence, not optimised values.
-- **The eval set is 35 hand-written cases.** It's a regression and failure-mode suite, not a
-  statistically strong benchmark. See [`evals/README.md`](evals/README.md#known-limits-of-this-evaluation).
-
-## Design doc
-
-See [`DESIGN.md`](DESIGN.md): evaluation (offline and online), what breaks at 10x documents or 100x queries, adding a new category, and the main trade-off (classifying with a decision model instead of an LLM).
