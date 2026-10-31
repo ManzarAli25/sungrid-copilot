@@ -7,8 +7,8 @@ the eligibility service instead of answering from the docs.
 Built with LangGraph, Qdrant, OpenRouter (LLM and embeddings), TypeSafe Jev (query classifier,
 with an LLM fallback) and DeepEval (evals).
 
-- **Live demo:** https://sungrid-copilot.onrender.com (password on request; free tier, so the
-  first load can take up to a minute)
+- **Live demo:** https://sungrid-copilot.onrender.com (free tier, so the first load can take
+  up to a minute)
 - **Design write-up (Part C):** [`DESIGN.md`](DESIGN.md), also as [`DESIGN.pdf`](DESIGN.pdf)
 - **Evaluation details:** [`evals/README.md`](evals/README.md)
 
@@ -41,7 +41,6 @@ Only the OpenRouter key is required. Everything else has a working default.
 | `TYPESAFE_API_KEY` | no | Jev classifier. Leave empty to classify with the LLM instead |
 | `CLASSIFIER_BACKEND` | no | `auto` (default: Jev if there's a key, else LLM), `jev` or `llm` |
 | `FILTER_MODE` | no | `widened` (default) or `strict`, see assumption 1 |
-| `APP_PASSWORD` | no | Password for the web UI. Set it for any public deployment |
 
 Models are set in `.env.example` too (`LLM_MODEL`, `JUDGE_MODEL`, `EMBEDDING_MODEL`).
 
