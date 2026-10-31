@@ -119,6 +119,24 @@ python -m scripts.draw_graph          # print the agent graph as Mermaid
 pytest                                # unit + guard tests (no API keys needed)
 ```
 
+### Web UI (Streamlit)
+
+```bash
+streamlit run app.py      # http://localhost:8501
+```
+
+Four tabs: **Copilot** (chat with an "under the hood" panel per answer showing the rewritten
+query, category probabilities, retrieval filter, retrieved chunks with scores, fallback, and the
+eligibility tool's input and output), **How it works** (live agent graph), **Knowledge base**
+(documents, category tags and the reasons for them, chunks) and **Evaluation** (latest results).
+
+**Deploying to Render:** push the repo, then in Render choose *New → Blueprint* and select it.
+`render.yaml` defines the service. Enter `OPENROUTER_API_KEY`, `QDRANT_URL`, `QDRANT_API_KEY`,
+`TYPESAFE_API_KEY` and **`APP_PASSWORD`** when prompted. Use Qdrant Cloud (already ingested),
+because Render's disk is ephemeral. `APP_PASSWORD` gates the app so a public URL can't spend
+your API credits, and `MAX_TURNS_PER_SESSION` (default 40) caps each session. Vercel isn't
+suitable: Streamlit needs a long-running server with WebSockets, not serverless functions.
+
 ### Evaluation
 
 ```bash
