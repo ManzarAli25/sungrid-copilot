@@ -1,0 +1,1287 @@
+[
+  {
+    "id": "rag-bill-dates",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 9.84,
+    "category": "billing_account",
+    "route": "rag",
+    "answer": "Bills are issued on the 1st of each month and are due within 21 days. Autopay members are charged on the 15th of the month.\n\n[Billing & Account FAQs > When are bills issued?]",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no identified irrelevant statements; the response is fully relevant to the question about bill issuance and autopay charges.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly answers both parts: bills are issued on the 1st and autopay charges occur on the 15th. The remaining nodes are irrelevant and are ranked lower, so the relevant information is correctly prioritized.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which states that bills are issued on the 1st, due within 21 days, and autopay members are charged on the 15th. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-missed-payment",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 7.88,
+    "category": "billing_account",
+    "route": "rag",
+    "answer": "Missing a payment does not lead to disconnection right away. Accounts more than 45 days past due are flagged for a service review, and the disconnection policy applies only to non-payment exceeding 90 days [Billing & Account FAQs > What happens if I miss a payment?].\n\nIf your miss came from a failed autopay charge:\n\n- SunGrid retries the charge twice more over the following 5 business days. If those retries fail, the account is treated as manual-pay for that billing cycle [Autopay Failure & Retry Policy > What Happens When Autopay Fails?].\n- You'll be notified by email and in the member portal after the first failed attempt, with instructions to update your payment method. A second notification is sent if the retry also fails [Autopay Failure & Retry Policy > Notifications].\n- The 45-day and 90-day timelines are counted from the original due date, not from the date autopay failed [Autopay Failure & Retry Policy > Relationship to Late Payment Policy].\n- You can re-enroll in autopay at any time under Account Settings in the member portal. Re-enrollment takes effect on the next billing cycle [Autopay Failure & Retry Policy > Re-Enrolling in Autopay].\n\nThe excerpts also say community-tier members are not disconnected from shared array access over billing disputes. They don't say how that applies to other billing situations. For questions about your specific account or balance, please contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because no irrelevant statements were identified, so the response is fully relevant.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 0.75,
+        "success": true,
+        "reason": "The score is 0.75 because the first node in the retrieval contexts is relevant, directly giving the \u201c45 days\u201d review and \u201c90 days\u201d disconnection timeline. However, the second and third nodes are irrelevant\u2014they concern \u201cnotifications after an autopay failure\u201d and \u201cretries for failed autopay charges\u201d\u2014and are ranked ahead of the relevant fourth node, which confirms the \u201c45-day and 90-day late-payment timelines.\u201d The irrelevant fifth node is appropriately ranked last.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node 1 in the retrieval context supports every sentence in the expected output, including the service review threshold, the 90-day non-payment disconnection rule, and the protection for community-tier members. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-autopay-fails",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 7.57,
+    "category": "billing_account",
+    "route": "rag",
+    "answer": "Because your card expired, SunGrid will retry the charge twice more over the following 5 business days. If those retries also fail, your account switches to manual pay for that billing cycle. Update your card in the member portal so the retries can succeed.\n\n- **Notifications:** You'll get an email and a portal notice after the first failed attempt with instructions to update your payment method. If the retry also fails, you'll get a second notice. [Autopay Failure & Retry Policy > Notifications]\n- **Re-enrolling:** You can re-enroll in autopay at any time under Account Settings in the member portal. The change takes effect on the next billing cycle. [Autopay Failure & Retry Policy > Re-Enrolling in Autopay]\n- **Late payments:** An account that reverts to manual pay is still subject to the standard 45-day and 90-day late-payment timelines. These are counted from the original due date, not from the date autopay failed. [Autopay Failure & Retry Policy > Relationship to Late Payment Policy]",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no irrelevant statements; the response fully addresses the question.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 0.75,
+        "success": true,
+        "reason": "The score is 0.75 because the first retrieval-context node is relevant, explaining that SunGrid retries the charge and switches the account to manual-pay, but the second and third nodes are irrelevant and rank ahead of the relevant fourth node. They concern \u201chow to re-enroll in autopay for a future billing cycle\u201d and \u201clate-payment timelines,\u201d respectively, so they lower precision. The fourth node adds the relevant notification detail, while the irrelevant fifth node about \u201crebate or billing adjustments\u201d comes after both relevant nodes.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because both sentences are fully supported: node 1 in retrieval context states that SunGrid retries twice more over the following 5 business days before switching the account to manual-pay, and node 4 confirms that members are notified by email and in the portal after the first failure.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-trueup",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 6.05,
+    "category": "billing_account",
+    "route": "rag",
+    "answer": "The net metering true-up happens annually, reconciling each 12-month cycle that ends in March. True-up statements are issued within 10 business days of the March billing cycle close, and any resulting credit or charge is applied to your next regular bill. [Net Metering True-Up Details > What Is True-Up?; Net Metering True-Up Details > Timing and Notification; Billing & Account FAQs > What is the annual true-up?]\n\nThis applies to Household-tier and Community-tier members on net metering. If you enrolled partway through a cycle, your true-up is prorated to your actual enrollment period. [Net Metering True-Up Details > Mid-Year Enrollment]",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 0.8333333333333334,
+        "success": true,
+        "reason": "The response is mostly relevant to net metering true-ups, but it identifies who the true-up applies to rather than answering when it happens.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first three retrieval-context nodes directly establish that the true-up happens each March, including the \u201cannual reconciliation\u201d ending in March and the \u201cMarch billing cycle close.\u201d The irrelevant nodes are ranked lower: the fourth node concerns mid-year enrollment, and the fifth explains credit calculations without giving timing.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the sentence is fully supported by nodes in retrieval context: nodes 1 and 3 confirm that the annual true-up occurs each March and reconciles credits and debits accumulated over the prior 12 months.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-dispute-charge",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 6.07,
+    "category": "billing_account",
+    "route": "rag",
+    "answer": "You can dispute a charge through SunGrid's member grievance procedure, but you must file within 60 days of the charge appearing on a statement. [Billing & Account FAQs > Can I dispute a charge on my bill?]\n\nThis route applies to billing disputes that aren't related to rebate eligibility. The excerpts don't describe the filing steps, so contact SunGrid member support for how to file. The grievance procedure itself is described in the Program Policies document.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the answer directly addresses how to dispute a charge, with no irrelevant statements.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly explains the member grievance procedure and the 60-day filing deadline. The irrelevant nodes are ranked lower: the second node discusses recovering reversed rebates over \u201cup to 6 monthly billing cycles,\u201d while the third, fourth, and fifth cover autopay adjustments, overdue accounts, and rebate eligibility rather than disputing a charge.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which provides the grievance procedure and 60-day filing deadline. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-rebate-not-on-bill",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.24,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "You should contact the **Incentive Program committee** directly, not general billing support. Rebate disbursement timing is governed by the Incentive & Rebate Programs process, not the standard billing cycle [Billing & Account FAQs > My rebate hasn't appeared on my bill yet \u2014 who do I contact?].",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is faithful to the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the response fully addresses the question about who to contact regarding the missing rebate, with no irrelevant statements.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second: the first directly says to \u201cContact the Incentive Program committee directly rather than general billing support,\u201d and the second clarifies the committee\u2019s role versus Billing\u2019s. The irrelevant nodes are ranked lower, starting at rank 3, and concern unrelated charge disputes, reversal appeals, or billing adjustments. This is a perfectly ordered ranking.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-appeal-deadline",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.1,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "You have **30 days from the determination** to appeal a rebate eligibility decision. Appeals are reviewed by the Incentive Program committee, not through the general member grievance procedure. [Incentive & Rebate Programs > Appeals Process]\n\nIf your situation involves a previously approved rebate being reversed, the Rebate Refund & Billing Adjustment Notice also says you may appeal through the same Incentive Program appeals process, and that you'll be notified in writing at least 30 days before the first adjusted billing cycle. [Rebate Refund & Billing Adjustment Notice > Member Notification]",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 0.75,
+        "success": true,
+        "reason": "The score is 0.75 because the response is related to rebates, but it does not give the appeal deadline and instead discusses notice before an adjusted billing cycle.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first: the first gives the 30-day appeal deadline, and the second identifies the appeal route. The irrelevant nodes in retrieval contexts are ranked lower; for example, the third only explains why rebates may be reversed, and the fifth concerns billing adjustments over \u201cup to 6 monthly billing cycles.\u201d Great ranking.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which specifies the 30-day appeal deadline, review by the Incentive Program committee, and separation from the general member grievance procedure.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-battery-amount",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.29,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "The Battery Storage Add-On Incentive is paid at **$0.15 per watt-hour of usable storage capacity**, capped at **$1,500 per household**. It is calculated separately from the Rooftop Rebate and does not count against the $4,000 Rooftop Rebate cap. [Battery Storage Add-On Incentive > Incentive Structure]",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the answer directly addresses the battery storage add-on incentive, with no irrelevant statements.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly provides the incentive amount and cap: \u201c$0.15 per watt-hour of usable storage capacity, capped at $1,500 per household.\u201d The irrelevant nodes are ranked lower and only discuss eligibility, standalone installations, or other programs, so the relevant information is correctly ranked first.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node 1 in the retrieval context supports both sentences: the $0.15 per watt-hour rate and $1,500 household cap, and the separate treatment outside the $4,000 Rooftop Rebate cap. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-battery-without-rooftop",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 4.69,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "No. The Battery Storage Add-On Incentive can't be applied for independently of an approved Rooftop Rebate Program application, and battery storage installed without a rooftop solar system isn't eligible at all [Incentive & Rebate Programs > Interaction with Other Incentive Programs; Battery Storage Add-On Incentive > Standalone Battery Installations]. The battery incentive also requires that the rooftop system already have an approved Rooftop Rebate determination on file [Battery Storage Add-On Incentive > Eligibility].\n\nFor standalone battery storage, the excerpts say to contact SunGrid support to discuss options outside the incentive program [Battery Storage Add-On Incentive > Standalone Battery Installations].",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no identified irrelevant statements, so the response fully addresses the question.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because all directly relevant nodes in the retrieval contexts are ranked above the irrelevant fifth node, which only describes the incentive amount and its financial relationship to the Rooftop Rebate rather than whether the battery incentive can be applied for without it.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node 1 in retrieval context confirms households cannot apply for the incentive independently, and node 3 confirms an approved Rooftop Rebate Program determination must be on file. Together, they fully support the expected output.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-low-income-credit",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 4.85,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "The low-income bill credit is a flat **$25 per month**, applied automatically to your bill as a separate line item. You do **not** need solar panels. The program is administered independently of the Rooftop Rebate Program and doesn't require solar to be installed [Low-Income Bill Credit Program > Overview] [Low-Income Bill Credit Program > Credit Amount].",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 0.8,
+        "success": true,
+        "reason": "The score is 0.80 because the response mostly addresses the credit amount and whether solar panels are required, but it includes an unnecessary comparison to another rebate program.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 0.95,
+        "success": true,
+        "reason": "The score is 0.95 because the first, second, and third nodes in the retrieval contexts directly address eligibility without solar and the $25 monthly credit, and the fifth node further clarifies that the credit is independent of Rooftop Rebate status. It is not higher because the fourth node is irrelevant: it covers the separate Rooftop Rebate Program, not the credit amount or solar requirement. Since that irrelevant node is ranked below the relevant nodes, the ranking is still very strong.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node(s) in retrieval context 3 supports sentence 1\u2019s $25 monthly bill credit, while node 2 supports sentence 2\u2019s solar-installation exemption and independence from the Rooftop Rebate Program. Great coverage!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-commercial-incentive",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.86,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "A 40kW commercial system is above the 25kW threshold, so it qualifies for SunGrid's Commercial Incentive Program. Instead of a one-time rebate, this is a performance-based incentive paid quarterly according to the system's metered output. Requests are reviewed by SunGrid's Carbon Markets desk, through a separate approval process from the Rooftop Rebate Program [Incentive & Rebate Programs > Commercial Incentive Program].\n\nThe excerpts I have don't include the per-kWh or per-quarter payment rate, the application steps, or the documentation needed. For those details, please contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully faithful to the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the answer directly addresses how the incentive works for a 40 kW commercial system, with no irrelevant statements identified.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly explains that systems \u201cabove 25kW\u201d receive a \u201cperformance-based incentive, paid quarterly based on metered output.\u201d The irrelevant nodes rank lower (second through fifth): they concern household systems \u201cbetween 3kW and 10kW\u201d or battery add-ons and storage, not the 40kW commercial incentive.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which confirms the system threshold, quarterly metered-output incentive, and review by Carbon Markets rather than the Rooftop Rebate Program.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-rebate-rules-general",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 7.33,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "To qualify for the Rooftop Rebate, a household must be in the household tier and install a new rooftop system that meets all of the following rules. The rebate is $0.40 per watt, capped at $4,000 per household [Incentive & Rebate Programs > Rooftop Rebate Program].\n\n- **System size:** 3 kW to 10 kW.\n- **Location:** The household must be within the SunGrid service region, as listed in the approved ZIP code list (Appendix A, not included in the materials I have).\n- **Income:** Adjusted gross income must be below the regional threshold that the Cooperative Board publishes annually.\n- **Installer:** The system must be installed by an approved installer. Systems from non-approved installers are not eligible under any circumstances.\n\nSystem size and income are hard requirements. A household that fails either one gets no rebate, regardless of how it scores on the other rules [Incentive & Rebate Programs > Rooftop Rebate Program].",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 0.9,
+        "success": true,
+        "reason": "The score is 0.90 because the response is mostly relevant to the rooftop rebate, but it gives the rebate amount and cap rather than the eligibility rules requested.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 0.7,
+        "success": true,
+        "reason": "The score is 0.70 because the first node in the retrieval contexts directly gives the rebate\u2019s eligibility rules, including the income and system-size requirements. It is not higher because irrelevant nodes ranked 2\u20134 appear before the relevant fifth node: node 2 concerns \u201cthe annual budget and waitlist,\u201d node 3 discusses \u201chow the rooftop rebate interacts with other incentive programs,\u201d and node 4 gives requirements for the \u201cBattery Storage Add-On Incentive.\u201d The fifth node offers only partial support, citing a \u201cnon-approved\u201d installer or exceeding the \u201cincome threshold.\u201d",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node 1 in retrieval context supports every sentence: it states the $0.40-per-watt rebate capped at $4,000, lists the system-size, service-region, income, and approved-installer requirements, and identifies income and system size as hard requirements.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-income-threshold-unanswerable",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 6.66,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "The excerpts don't give a dollar figure for the Rooftop Rebate income threshold. They say only that household adjusted gross income must fall below a regional threshold that the Cooperative Board publishes each year. [Incentive & Rebate Programs > Rooftop Rebate Program]\n\nFor the current year's number, please contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because no irrelevant statements were identified; the response is fully relevant to the question about the rooftop rebate income threshold.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the relevant node is ranked first and says income must be below \u201cthe regional threshold published annually by the Cooperative Board\u201d; the irrelevant nodes are appropriately ranked lower, at ranks 2\u20135. Great ranking, though the retrieved context does not provide the exact number.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which says the threshold is published annually by the Cooperative Board and gives no number.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-reversal-autopay",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.32,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "If your rebate is reversed and you're on autopay, the billing adjustment is applied automatically to your scheduled charge. It is spread over up to 6 monthly billing cycles rather than charged as one lump sum [Rebate Refund & Billing Adjustment Notice > Interaction with Autopay; Reversal Process].\n\nThe Incentive Program committee makes the reversal decision, and the Billing team carries out the adjustment schedule [Rebate Refund & Billing Adjustment Notice > Which Team Handles This?].\n\nThe excerpts I have don't state how the adjustment is split across cycles or what your monthly amount would be. For those details, contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 0.8571428571428571,
+        "success": true,
+        "reason": "The 0.86 score reflects that the answer mostly addressed what happens when a rebate is reversed while on autopay, but it also discussed who decides whether to reverse the rebate, which does not explain what happens to the scheduled autopay charge.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00: the first and second nodes in the retrieval contexts directly address autopay and the repayment timeline, while the irrelevant third node only \u201cexplains why rebates may be reversed,\u201d the fourth covers teams rather than payment effects, and the fifth discusses unrelated re-enrollment. All irrelevant nodes are ranked below the relevant ones.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is supported by the 1st node in retrieval context, and sentence 2 is supported by the 2nd node in retrieval context. Excellent match.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-reversal-from-billing-side",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 8.2,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "The charge is most likely a billing adjustment to recover a rooftop rebate that was approved and paid to your household but later reversed because of an eligibility error found after disbursement. SunGrid spreads the recovery over up to 6 monthly billing cycles instead of one lump charge to reduce hardship [Rebate Refund & Billing Adjustment Notice > Reversal Process]. The excerpts describe the general process and don't tell me your specific case, so I can't confirm the reason for your charge.\n\n- **Who decides and who bills:** The Incentive Program committee makes the reversal determination, and the Billing team carries out the adjustment schedule [Rebate Refund & Billing Adjustment Notice > Which Team Handles This?].\n- **Notice:** Affected members are notified in writing at least 30 days before the first adjusted billing cycle [Rebate Refund & Billing Adjustment Notice > Member Notification].\n- **Appeal:** You can appeal the reversal determination through the Incentive Program appeals process in the Incentive & Rebate Programs document, not the general member grievance procedure [Rebate Refund & Billing Adjustment Notice > Member Notification].\n- **Payment:** If you're on autopay, the adjustment is applied automatically to your scheduled charge. If you pay manually, you must acknowledge the revised amount in the member portal before the next billing cycle [Rebate Refund & Billing Adjustment Notice > Interaction with Autopay].\n\nTo confirm why your charge was issued and whether you can appeal, contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no irrelevant statements; the answer directly addresses the question.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 0.9166666666666666,
+        "success": true,
+        "reason": "The score is 0.92 because the first two retrieval-context nodes are relevant: node 1 explains recovery over \u201cup to 6 monthly billing cycles,\u201d and node 2 adds context on the eligibility process and billing adjustment. It is not higher because irrelevant node 3 discusses \u201cadvance notification and appeals\u201d and appears before relevant node 4, which explains an \u201celigibility error discovered after disbursement\u201d; irrelevant node 5 also covers payment handling rather than the reason for the charge.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported: node 4 in the retrieval context explains the rebate reversal after an eligibility error, and node 1 describes recovery through billing adjustments over up to 6 monthly cycles. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-reversal-appeal-path",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.93,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "No. Members affected by a rebate reversal must appeal through the Incentive Program appeals process, not the general member grievance procedure. [Rebate Refund & Billing Adjustment Notice > Member Notification] states this directly, and [Incentive & Rebate Programs > Appeals Process] explains that these appeals are reviewed by the Incentive Program committee, separate from the grievance procedure in the Program Policies document. The appeal window is 30 days from the determination.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully faithful to the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no identified irrelevant statements; the response fully addresses the question.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the relevant nodes are ranked first: the first says appeals are handled \"separate from the general member grievance procedure,\" and the second directly confirms appeals go through the Incentive Program process, not the normal grievance procedure. The irrelevant fourth and fifth nodes are ranked lower because they discuss billing adjustments or reversal reasons without addressing the appeal route.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because both sentences are fully supported by the 2nd node in retrieval context: it states that reversal determinations are appealed through the Incentive Program appeals process, not the general grievance procedure, and that members receive written notice at least 30 days before the first adjusted billing cycle.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-cert-lapse",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 6.08,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "Yes, it can. Under SunGrid's rules, any job completed while an installer's certification is lapsed is treated as performed by a non-approved installer for rebate eligibility, no matter what the installer's certification history was before the lapse [Installer Certification & Renewal > Annual Renewal]. Applicants also have to submit proof of installer approval status with their application [Incentive & Rebate Programs > Documentation Requirements].\n\nThe excerpts don't say how a lapse affects a specific job or application, so please contact SunGrid member support with your installer's name and your install dates. They can tell you how your case is handled.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 0.75,
+        "success": false,
+        "reason": "The score is 0.75 because the actual output does not reflect that jobs completed while certification is lapsed are treated as performed by a non-approved installer for rebate eligibility, regardless of earlier certification history.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no identified irrelevant statements, so the response is fully relevant to the input.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first retrieval-context node directly answers the question: work completed during a certification lapse is treated as performed by a non-approved installer for rebate eligibility, regardless of prior certification. The later nodes are irrelevant and appropriately ranked lower, covering safety violations, renewal steps, application documents, or income recertification instead.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node 1 in the retrieval context supports both sentences: lapsed-period jobs are treated as performed by a non-approved installer for rebate eligibility, regardless of prior certification history. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-micro-inverters",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 6.27,
+    "category": "technical_installation",
+    "route": "rag",
+    "answer": "Micro-inverters are required for any roof section with mixed orientation, such as an east/west split roof, to avoid mismatch losses. [Technical & Installation Guidance > Inverter Types]\n\nThey may also be proposed by an approved installer as an alternative when a roof has partial shading, since roofs with more than 20% annual shading are generally not recommended for standard panel layouts. [Technical & Installation Guidance > Site Assessment]",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the response is fully relevant to the question, with no irrelevant statements.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly answers the question: \u201cMicro-inverters are required for any roof section with mixed orientation.\u201d The lower-ranked nodes (2\u20135) discuss battery compatibility, shading alternatives, monitoring, and fault codes, so they are appropriately ranked below the relevant first node.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the expected output is fully supported by the 1st node in retrieval context, which states that micro-inverters are required for mixed-orientation roof sections such as east/west split roofs to avoid mismatch losses. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-battery-clearance",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 10.11,
+    "category": "technical_installation",
+    "route": "rag",
+    "answer": "A home battery unit must be installed with a minimum 3-foot clearance from doors, windows, and combustible materials, per SunGrid's adopted fire code standard [Battery Storage Installation Requirements > Fire and Safety Code]. Indoor installations also need a dedicated ventilation assessment by the installer before the system is energized, per the same section.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the answer is fully relevant to the question about home battery clearance, with no irrelevant statements identified.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly answers with \u201ca minimum 3-foot clearance.\u201d The irrelevant nodes are correctly ranked lower: nodes 2\u20135 discuss \u201cbattery capacity sizing and incentives,\u201d \u201ccommissioning tests and grid-disconnect safety,\u201d \u201ccompatible inverter configurations,\u201d and \u201croof shading and structural assessment,\u201d rather than battery clearance. Great ranking.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because node 1 in retrieval context supports both sentences: it specifies a minimum 3-foot clearance from doors, windows, and combustible materials, and requires a ventilation assessment for indoor installations before energizing. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-proxy-vote",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 4.94,
+    "category": "program_policies",
+    "route": "rag",
+    "answer": "Yes. Members who can't attend the annual meeting in person can assign a proxy vote to another member in good standing through the member portal, no later than 5 business days before the meeting [Governance & Voting Rights > Proxy Voting].\n\nSome related points from the same excerpts:\n- Proxy votes count toward quorum. Quorum is 15% of eligible voting members, counting in-person and proxy votes together. If quorum isn't met, votes are deferred to a follow-up meeting within 30 days [Governance & Voting Rights > Quorum Requirements].\n- Each Household or Commercial account gets one vote, and each Community-tier account also gets one vote regardless of subscription size [Governance & Voting Rights > Voting Eligibility].",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the response directly addresses the question, with no irrelevant statements.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 0.8333333333333333,
+        "success": true,
+        "reason": "The score is 0.83 because the first retrieval-context node directly answers that members unable to attend may assign a proxy vote. However, it is not higher because the irrelevant second node, which says it \u201cdoes not address proxy voting,\u201d ranks above the relevant third node, which notes that members may attend \u201cby proxy.\u201d The irrelevant fourth node, about membership-tier voting rights, and fifth node, about Board elections, are ranked lower than the relevant nodes, as they should be.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in the retrieval context. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-multifamily-tier",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 4.95,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "The knowledge base doesn't include a rebate amount for the multi-family housing tier. SunGrid plans to introduce that tier next fiscal year, but its eligibility and rebate treatment are not finalized, and members should not rely on that document until the formal policy is released [Company Updates > Upcoming Changes].\n\nThe $0.40/watt Rooftop Rebate in the excerpts applies to Household-tier members, so it may not apply to this new tier [Incentive & Rebate Programs > Rooftop Rebate Program]. For current details, contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully faithful to the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 0.8571428571428571,
+        "success": true,
+        "reason": "The answer is mostly relevant to the rebate question, but it includes launch timing, which does not specify the rebate amount.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly addresses the new tier, stating its \u201celigibility and rebate treatment\u201d are \u201cnot yet finalized.\u201d The irrelevant nodes ranked 2\u20135 concern existing rebates, tier changes, funding, or a separate commercial incentive, so they appropriately rank below the relevant first node.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which says the details are not finalized and describes the planned fourth tier for next fiscal year, with eligibility and rebate details unpublished and not to be relied on for eligibility guidance. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "rag-member-count",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 5.05,
+    "category": "company_updates",
+    "route": "rag",
+    "answer": "SunGrid ended the fiscal year with just over 5,000 members across all tiers, up from about 3,600 the prior year [Annual Impact Report Summary > Membership Growth]. This is the year-end figure, so it may not reflect today's exact count. For a current number, contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions; the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no identified irrelevant statements, so the response is fully relevant to the question.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first node in the retrieval contexts directly answers that SunGrid has \u201cjust over 5,000 members across all tiers,\u201d and all irrelevant nodes are ranked below it. Great retrieval ranking.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which gives the year-end membership as just over 5,000, up from approximately 3,600 the prior year. Great match!",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-eligible",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true
+    },
+    "latency_s": 4.19,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **eligible** for the Rooftop Rebate Program.\n\nEstimated rebate: **$2,400.00**\n\nThis is an estimate from the eligibility check; the final amount is confirmed when your application is processed.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The tool returned eligible=true with an estimated rebate of $2,400.00, and the response reports both exactly. It adds no unsupported eligibility conditions; noting that the final amount is confirmed during application processing does not change the tool-based eligibility claim or estimate.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-cap",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true
+    },
+    "latency_s": 3.28,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **eligible** for the Rooftop Rebate Program.\n\nEstimated rebate: **$4,000.00**\n\nThis is an estimate from the eligibility check; the final amount is confirmed when your application is processed.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The tool reports eligible=true with an estimated rebate of $4,000.00 and says all eligibility checks passed. The response correctly states eligibility and gives the exact estimate without adding eligibility conditions; its note that processing confirms the final amount does not contradict the tool output.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-income-fail",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true,
+      "hard_gate_no_amount": true
+    },
+    "latency_s": 3.72,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **not eligible** for the Rooftop Rebate Program.\n\nReason: Household income exceeds the regional threshold.\n\nNo rebate amount applies. If you believe this determination is wrong, you can ask me about the rebate appeals process.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The output clearly says the household is not eligible and gives the tool\u2019s exact reason, that income exceeds the regional threshold. It states no rebate applies without giving a dollar figure or suggesting a partial rebate; mentioning an appeals process does not add an unsupported eligibility claim.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-zip-fail",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true,
+      "hard_gate_no_amount": true
+    },
+    "latency_s": 3.31,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **not eligible** for the Rooftop Rebate Program.\n\nReason: Household ZIP code is outside the SunGrid service region.\n\nNo rebate amount applies. If you believe this determination is wrong, you can ask me about the rebate appeals process.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The tool returned eligible=false, and the response clearly says the household is not eligible and gives the matching reason that ZIP code 10001 is outside the SunGrid service region. It gives no dollar figure, estimate, range, or suggestion of a partial rebate.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-installer-fail",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true,
+      "hard_gate_no_amount": true
+    },
+    "latency_s": 4.34,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **not eligible** for the Rooftop Rebate Program.\n\nReason: Installer is not on the SunGrid approved installer list.\n\nNo rebate amount applies. If you believe this determination is wrong, you can ask me about the rebate appeals process.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The tool returned eligible=false because the installer is not on the approved list. The response clearly states the household is not eligible, gives that reason, and says no rebate amount applies without stating a dollar figure or suggesting a partial or possible rebate.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-size-fail",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true,
+      "hard_gate_no_amount": true
+    },
+    "latency_s": 3.19,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **not eligible** for the Rooftop Rebate Program.\n\nReason: System size is outside the eligible 3kW-10kW range.\n\nNo rebate amount applies. If you believe this determination is wrong, you can ask me about the rebate appeals process.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The output clearly states the household is not eligible and gives the tool's reason: the 12 kW system is outside the eligible 3 kW\u201310 kW range. It gives no dollar figure or rebate estimate; mentioning an appeals process does not suggest a partial or possible rebate.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "elig-missing-info",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_not_called": true
+    },
+    "latency_s": 3.27,
+    "category": "incentive_rebate",
+    "route": "eligibility_needs_info",
+    "answer": "I can check your Rooftop Rebate eligibility with SunGrid's Incentive Program service. To do that I still need your household's annual income (USD), the size of your solar system in kW and whether your installer is on SunGrid's approved installer list.",
+    "deepeval": []
+  },
+  {
+    "id": "elig-vague-installer",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_not_called": true
+    },
+    "latency_s": 3.1,
+    "category": "incentive_rebate",
+    "route": "eligibility_needs_info",
+    "answer": "I can check your Rooftop Rebate eligibility with SunGrid's Incentive Program service. To do that I still need whether your installer is on SunGrid's approved installer list.",
+    "deepeval": []
+  },
+  {
+    "id": "multi-short-reply",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true
+    },
+    "latency_s": 6.9,
+    "category": "technical_installation",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **eligible** for the Rooftop Rebate Program.\n\nEstimated rebate: **$2,400.00**\n\nThis is an estimate from the eligibility check; the final amount is confirmed when your application is processed.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The tool returned eligible=true with an estimated rebate of $2,400.00, and the response reports that exact amount and eligibility. The note that the final amount is confirmed during application processing does not add an eligibility condition.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "multi-what-if",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_called_once": true,
+      "tool_args_match": true,
+      "verdict_correct": true
+    },
+    "latency_s": 8.79,
+    "category": "incentive_rebate",
+    "route": "eligibility_check",
+    "answer": "Based on SunGrid's Incentive Program eligibility service, this household is **eligible** for the Rooftop Rebate Program.\n\nEstimated rebate: **$3,600.00**\n\nThis is an estimate from the eligibility check; the final amount is confirmed when your application is processed.",
+    "deepeval": [
+      {
+        "metric": "Tool Correctness",
+        "score": 1.0,
+        "success": true,
+        "reason": "[\n\t Tool Calling Reason: All expected tools ['check_rebate_eligibility'] were called (order not considered).\n\t Tool Selection Reason: No available tools were provided to assess tool selection criteria\n]\n",
+        "error": null
+      },
+      {
+        "metric": "Hard gate [GEval]",
+        "score": 1.0,
+        "success": true,
+        "reason": "The tool returned eligible=true with an estimated rebate of $3,600.00, and the response reports both exactly. It does not add unsupported eligibility conditions; the note that the final amount is confirmed during application processing does not change the tool-supported eligibility or estimate.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "multi-appeal-that",
+    "checks": {
+      "category": true,
+      "route": true,
+      "retrieval_hit@5": true,
+      "tool_not_called": true
+    },
+    "latency_s": 15.95,
+    "category": "incentive_rebate",
+    "route": "rag",
+    "answer": "You have **30 days from the determination** to appeal a rebate eligibility decision, including a rebate reversal. Appeals go to the Incentive Program committee, not the general member grievance procedure. [Incentive & Rebate Programs > Appeals Process] [Rebate Refund & Billing Adjustment Notice > Member Notification]\n\nThe excerpts measure the 30 days from the determination itself, not from the date you received the notice. If you're unsure when the determination was made, contact SunGrid member support.",
+    "deepeval": [
+      {
+        "metric": "Faithfulness",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no contradictions, so the actual output is fully consistent with the retrieval context.",
+        "error": null
+      },
+      {
+        "metric": "Answer Relevancy",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because there are no irrelevant statements, and the response fully addresses the input.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Precision",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because the first two nodes in the retrieval contexts directly support the answer: the first gives the \u201cwithin 30 days\u201d deadline, and the second identifies the appeal route. The irrelevant nodes are correctly ranked lower: node 3 covers recovery over billing cycles, node 4 explains why reversals occur, and node 5 names the teams involved\u2014none addresses the appeal deadline or process.",
+        "error": null
+      },
+      {
+        "metric": "Contextual Recall",
+        "score": 1.0,
+        "success": true,
+        "reason": "The score is 1.00 because sentence 1 is fully supported: nodes 1 and 2 in retrieval context establish the 30-day deadline, the Incentive Program appeals process, and that appeals are separate from the general grievance procedure.",
+        "error": null
+      }
+    ]
+  },
+  {
+    "id": "off-weather",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_not_called": true
+    },
+    "latency_s": 2.83,
+    "category": "non_relevant",
+    "route": "off_topic",
+    "answer": "I can only help with SunGrid Cooperative topics: membership and policies, rebates and incentives, billing, installation, and company news.",
+    "deepeval": []
+  },
+  {
+    "id": "off-coding",
+    "checks": {
+      "category": true,
+      "route": true,
+      "tool_not_called": true
+    },
+    "latency_s": 1.85,
+    "category": "non_relevant",
+    "route": "off_topic",
+    "answer": "I can only help with SunGrid Cooperative topics: membership and policies, rebates and incentives, billing, installation, and company news.",
+    "deepeval": []
+  }
+]

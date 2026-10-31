@@ -32,9 +32,11 @@ class EligibilityParams(BaseModel):
     installer_approved: bool | None = Field(
         None,
         description=(
-            "true ONLY if the member explicitly says their installer is SunGrid-approved / on the "
-            "approved list; false if they say it is not approved or its certification lapsed; "
-            "null otherwise. Never infer this from praise of the installer."
+            "Whether the installer is on SunGrid's approved installer list. true if the member "
+            "states approval in any wording, e.g. 'approved installer', 'SunGrid-approved', 'on "
+            "the approved list', 'yes they're approved'. false if they say it is not approved or "
+            "its certification lapsed. null if approval is not mentioned at all. Praise such as "
+            "'great installer' or 'licensed company' is NOT approval: use null."
         ),
     )
 

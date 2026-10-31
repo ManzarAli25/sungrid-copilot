@@ -14,7 +14,7 @@ def _client() -> OpenAI:
     s = get_settings()
     if not s.openrouter_api_key:
         raise RuntimeError("OPENROUTER_API_KEY is not set — see .env.example")
-    return OpenAI(api_key=s.openrouter_api_key, base_url=s.openrouter_base_url)
+    return OpenAI(api_key=s.openrouter_api_key, base_url=s.openrouter_base_url, max_retries=5)
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:

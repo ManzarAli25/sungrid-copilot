@@ -119,7 +119,19 @@ python -m scripts.draw_graph          # print the agent graph as Mermaid
 pytest                                # unit + guard tests (no API keys needed)
 ```
 
-*TODO*: evals.
+### Evaluation
+
+```bash
+python -m evals.run_evals                  # 35 golden cases: deterministic checks + DeepEval metrics
+python -m evals.run_evals --skip-deepeval  # deterministic checks only (no judge cost)
+python -m evals.run_evals --compare        # classifier backend x filter mode experiment
+```
+
+Latest run: **100% on every deterministic check** (category, route, retrieval hit@5, tool
+arguments, verdict, hard gate). DeepEval: Faithfulness 0.99, Answer Relevancy 0.96, Contextual
+Precision 0.95, Contextual Recall 1.00, Tool Correctness 1.00, hard-gate G-Eval 1.00.
+Methodology, the judge-mode comparison and what the evals changed are in
+[`evals/README.md`](evals/README.md).
 
 ## Assumptions
 
@@ -140,7 +152,8 @@ reading of the brief on purpose:
 - **Why it's still a filter, not routing:** every relevant query runs the same retrieval step.
   The category only narrows which chunks are searched.
 - **Literal behaviour is one setting away:** `FILTER_MODE=strict` filters on the primary category
-  only. The eval suite runs both modes and compares them.
+  only. Measured on 22 RAG cases, the filter alone retrieves the right chunk in **19/22 (strict)
+  vs 21/22 (widened)**. With the fallback (assumption 4), both reach 22/22.
 
 ### 2. `non_relevant` queries skip retrieval
 There is no category to filter to, so the copilot declines politely instead of searching.
@@ -152,11 +165,39 @@ recorded next to the tag in `config/categories.yaml`. Doc 06's **primary** categ
 `incentive_rebate`, because both the reversal decision and the appeal path belong to the
 Incentive Program committee; Billing only executes the repayment schedule.
 
-### 4. Weak filtered results fall back to an unfiltered search
-If the best filtered hit scores below 0.45 (cosine), the classifier probably excluded the answer,
-so retrieval runs again without a filter. The threshold comes from a small probe: relevant
-queries scored 0.49–0.75 and an off-topic query scored 0.15. It is validated by the eval suite
-rather than treated as final.
+### 4. The filter can be overridden by clearly better evidence
+Retrieval always runs a filtered and an unfiltered search (one embedding, two vector queries).
+The unfiltered results are used when:
+- **absolute:** the best filtered hit scores below 0.45 (cosine). From a small probe, relevant
+  queries scored 0.49–0.75 and an off-topic query scored 0.15; or
+- **relative:** the best unfiltered hit beats the best filtered hit by ≥ 0.10. Added after the
+  golden set showed *"What rebate will the new multi-family tier get?"* confidently classified
+  `incentive_rebate` (0.98), while the answer is in Company Updates (0.669 vs 0.530).
+
+So the category acts as a strong preference, not a wall. Both thresholds were tuned on small
+probes and are validated by the eval suite, not treated as final.
+
+### 5. Eligibility inputs are never guessed
+All four eligibility inputs are optional during extraction. Anything the member didn't state
+is asked for, not inferred. "My installer is great" is not approval. The LLM never calls the
+tool directly, because tool-calling models tend to fill required arguments with plausible guesses.
+
+## Known limitations
+
+- **The eligibility service reports only the first failed check.** A household failing both
+  income and system size hears about one reason. That's the stub's behaviour, deliberately
+  unchanged.
+- **The tool covers the Rooftop Rebate only.** Battery add-on and low-income credit questions
+  are answered from documents. Their eligibility can't be checked by a tool.
+- **The income threshold value isn't in the documents** (only that it's "published annually").
+  The copilot says so rather than quoting the stub's internal `$120,000`.
+- **Conversation state is in memory** (`InMemorySaver`). It's lost on restart. Production would
+  use a persistent checkpointer (Postgres/Redis).
+- **Each follow-up turn costs one extra LLM call** for query rewriting. First turns cost nothing extra.
+- **Thresholds (0.10 widening, 0.45 / 0.10 fallback) are tuned on a small set.** They're
+  sensible defaults with eval evidence, not optimised values.
+- **The eval set is 35 hand-written cases.** It's a regression and failure-mode suite, not a
+  statistically strong benchmark. See [`evals/README.md`](evals/README.md#known-limits-of-this-evaluation).
 
 ## Design doc
 

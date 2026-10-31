@@ -1,0 +1,324 @@
+# Golden evaluation set. Hand-written from data/docs/; this is the ground truth the system is
+# measured against, so every expected answer must be traceable to a document.
+#
+# Fields
+#   id, type          rag | eligibility | off_topic
+#   turns             member messages; the LAST turn is the one evaluated (earlier turns build context)
+#   category          expected primary category (classifier accuracy)
+#   also_ok           other primary categories accepted for genuinely ambiguous queries
+#   route             expected agent route on the last turn
+#   sources           chunks that must be retrieved ("NN::section-slug"); any one = hit
+#   expected_output   reference answer (used by ContextualRecall / ContextualPrecision)
+#   tool_args         expected eligibility tool input; absent = tool must NOT be called
+#   eligible          expected verdict
+#   tags              free-form labels for slicing results
+
+cases:
+  # ---------------------------------------------------------------- RAG: billing
+  - id: rag-bill-dates
+    type: rag
+    turns: ["When are bills issued, and when does autopay charge me?"]
+    category: billing_account
+    route: rag
+    sources: ["03::when-are-bills-issued"]
+    expected_output: Bills are issued on the 1st of each month and are due within 21 days. Autopay members are charged on the 15th.
+
+  - id: rag-missed-payment
+    type: rag
+    turns: ["What happens if I miss a payment? Will I be disconnected?"]
+    category: billing_account
+    route: rag
+    sources: ["03::what-happens-if-i-miss-a-payment"]
+    expected_output: Accounts more than 45 days past due are flagged for a service review. Disconnection applies only to non-payment exceeding 90 days, and community-tier members are not disconnected from shared array access over billing disputes.
+
+  - id: rag-autopay-fails
+    type: rag
+    turns: ["My card expired and autopay failed. What happens now?"]
+    category: billing_account
+    route: rag
+    sources: ["12::what-happens-when-autopay-fails"]
+    expected_output: SunGrid retries the charge twice more over the following 5 business days, then treats the account as manual-pay for that billing cycle. Members are notified by email and in the portal after the first failure.
+
+  - id: rag-trueup
+    type: rag
+    turns: ["When does the net metering true-up happen?"]
+    category: billing_account
+    route: rag
+    sources: ["03::what-is-the-annual-true-up", "11::what-is-true-up"]
+    expected_output: The annual true-up happens each March, reconciling credits and debits accumulated over the prior 12 months.
+
+  - id: rag-dispute-charge
+    type: rag
+    turns: ["How do I dispute a charge on my bill?"]
+    category: billing_account
+    also_ok: [program_policies]
+    route: rag
+    sources: ["03::can-i-dispute-a-charge-on-my-bill"]
+    expected_output: Billing disputes not related to rebate eligibility go through the member grievance procedure in the Program Policies document and must be filed within 60 days of the charge appearing on a statement.
+
+  # ---------------------------------------------------------------- RAG: incentives
+  - id: rag-rebate-not-on-bill
+    type: rag
+    tags: [ambiguous, cross-category]
+    turns: ["My rebate hasn't shown up on my bill yet. Who do I contact?"]
+    category: incentive_rebate
+    also_ok: [billing_account]
+    route: rag
+    sources: ["03::my-rebate-hasn-t-appeared-on-my-bill-yet-who-do-i-contact"]
+    expected_output: Rebate disbursement timing is governed by the Incentive & Rebate Programs process, not the billing cycle, so contact the Incentive Program committee directly rather than general billing support.
+
+  - id: rag-appeal-deadline
+    type: rag
+    turns: ["How long do I have to appeal a rebate eligibility decision?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["02::appeals-process"]
+    expected_output: Appeals must be filed within 30 days of the determination and are reviewed by the Incentive Program committee, separate from the general member grievance procedure.
+
+  - id: rag-battery-amount
+    type: rag
+    turns: ["How much is the battery storage add-on incentive?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["09::incentive-structure"]
+    expected_output: $0.15 per watt-hour of usable storage capacity, capped at $1,500 per household. It is separate from and does not count against the $4,000 Rooftop Rebate cap.
+
+  - id: rag-battery-without-rooftop
+    type: rag
+    turns: ["Can I apply for the battery incentive without the rooftop rebate?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["02::interaction-with-other-incentive-programs", "09::eligibility", "09::overview"]
+    expected_output: The Battery Storage Add-On Incentive cannot be applied for without the rooftop rebate; it requires an approved Rooftop Rebate Program determination on file; households cannot apply for it independently.
+
+  - id: rag-low-income-credit
+    type: rag
+    turns: ["How much is the low-income bill credit, and do I need solar panels to get it?"]
+    category: incentive_rebate
+    also_ok: [billing_account]
+    route: rag
+    sources: ["10::credit-amount", "10::overview"]
+    expected_output: Qualifying households receive a flat $25 monthly bill credit. The program does not require the member to have solar installed and is independent of the Rooftop Rebate Program.
+
+  - id: rag-commercial-incentive
+    type: rag
+    turns: ["How does the incentive work for a 40kW commercial system?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["02::commercial-incentive-program"]
+    expected_output: Commercial-tier systems above 25kW get a performance-based incentive paid quarterly based on metered output, reviewed by SunGrid's Carbon Markets desk rather than the Rooftop Rebate Program.
+
+  - id: rag-rebate-rules-general
+    type: rag
+    tags: [eligibility-trap]
+    turns: ["What are the eligibility rules for the rooftop rebate?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["02::rooftop-rebate-program"]
+    expected_output: Household-tier members get $0.40/watt capped at $4,000. The system must be 3kW-10kW, within the SunGrid service region, below the regional income threshold, and installed by an approved installer. Income and system size are hard requirements.
+
+  - id: rag-income-threshold-unanswerable
+    type: rag
+    tags: [unanswerable]
+    turns: ["What exactly is the income threshold number for the rooftop rebate?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["02::rooftop-rebate-program"]
+    expected_output: The documents do not state a number; the threshold is published annually by the Cooperative Board.
+
+  # ---------------------------------------------------------------- RAG: doc 06 (ambiguous)
+  - id: rag-reversal-autopay
+    type: rag
+    tags: [ambiguous, doc06]
+    turns: ["My rebate got reversed and I'm on autopay. What happens?"]
+    category: incentive_rebate
+    also_ok: [billing_account]
+    route: rag
+    sources: ["06::interaction-with-autopay"]
+    expected_output: The adjustment amount is applied automatically to the scheduled autopay charge. Recovery is spread over up to 6 monthly billing cycles rather than one lump charge.
+
+  - id: rag-reversal-from-billing-side
+    type: rag
+    tags: [ambiguous, doc06]
+    turns: ["Why is there an extra rebate recovery charge spread over my monthly bills?"]
+    category: billing_account
+    also_ok: [incentive_rebate]
+    route: rag
+    sources: ["06::reversal-process", "06::overview"]
+    expected_output: A previously approved rebate was reversed because of an eligibility error found after disbursement, so SunGrid recovers it through a billing adjustment over up to 6 monthly billing cycles.
+
+  - id: rag-reversal-appeal-path
+    type: rag
+    tags: [ambiguous, doc06]
+    turns: ["Can I appeal a rebate reversal through the normal grievance procedure?"]
+    category: incentive_rebate
+    route: rag
+    sources: ["06::member-notification"]
+    expected_output: A rebate reversal cannot be appealed through the general grievance procedure; it is appealed through the Incentive Program appeals process. Members are notified in writing at least 30 days before the first adjusted billing cycle.
+
+  # ---------------------------------------------------------------- RAG: technical / policies / updates
+  - id: rag-cert-lapse
+    type: rag
+    tags: [cross-category]
+    turns: ["My installer's certification lapsed during my install. Does that affect my rebate?"]
+    category: incentive_rebate
+    also_ok: [technical_installation]
+    route: rag
+    sources: ["07::annual-renewal"]
+    expected_output: A lapsed certification does affect the rebate. Jobs completed during a lapsed certification period are treated as performed by a non-approved installer for rebate eligibility purposes, regardless of prior certification history.
+
+  - id: rag-micro-inverters
+    type: rag
+    turns: ["When are micro-inverters required?"]
+    category: technical_installation
+    route: rag
+    sources: ["04::inverter-types"]
+    expected_output: Micro-inverters are required for any roof section with mixed orientation, such as east/west split roofs, to avoid mismatch losses.
+
+  - id: rag-battery-clearance
+    type: rag
+    turns: ["How much clearance does a home battery need?"]
+    category: technical_installation
+    route: rag
+    sources: ["13::fire-and-safety-code"]
+    expected_output: At least 3 feet from doors, windows and combustible materials. Indoor installations need a ventilation assessment before energizing.
+
+  - id: rag-proxy-vote
+    type: rag
+    turns: ["I can't attend the annual meeting. Can someone vote for me?"]
+    category: program_policies
+    route: rag
+    sources: ["08::proxy-voting"]
+    expected_output: Another member can vote on your behalf. Assign a proxy vote to another member in good standing through the member portal, no later than 5 business days before the meeting.
+
+  - id: rag-multifamily-tier
+    type: rag
+    tags: [policy-trap]
+    turns: ["What rebate will the new multi-family housing tier get?"]
+    category: company_updates
+    also_ok: [incentive_rebate, program_policies]
+    route: rag
+    sources: ["05::upcoming-changes"]
+    expected_output: It is not finalized. A fourth tier for multi-family developments is planned for next fiscal year, but eligibility and rebate treatment have not been published and members should not rely on the update for eligibility guidance.
+
+  - id: rag-member-count
+    type: rag
+    turns: ["How many members does SunGrid have now?"]
+    category: company_updates
+    route: rag
+    sources: ["14::membership-growth"]
+    expected_output: Just over 5,000 members across all tiers at fiscal year end, up from about 3,600 the year before.
+
+  # ---------------------------------------------------------------- Eligibility (tool + hard gate)
+  - id: elig-eligible
+    type: eligibility
+    turns: ["Am I eligible for the rooftop rebate? ZIP 94103, household income $90,000, 6 kW system, and my installer is on SunGrid's approved list."]
+    category: incentive_rebate
+    route: eligibility_check
+    tool_args: {household_zip: "94103", annual_income_usd: 90000, system_size_kw: 6.0, installer_approved: true}
+    eligible: true
+
+  - id: elig-cap
+    type: eligibility
+    turns: ["Check my rooftop rebate: 94101, income 70k, 10 kW, SunGrid-approved installer."]
+    category: incentive_rebate
+    route: eligibility_check
+    tool_args: {household_zip: "94101", annual_income_usd: 70000, system_size_kw: 10.0, installer_approved: true}
+    eligible: true
+
+  - id: elig-income-fail
+    type: eligibility
+    tags: [hard-gate]
+    turns: ["Can I get the rooftop rebate? I'm in 94105, we make 150k a year, 8 kW system, installer is SunGrid approved."]
+    category: incentive_rebate
+    route: eligibility_check
+    tool_args: {household_zip: "94105", annual_income_usd: 150000, system_size_kw: 8.0, installer_approved: true}
+    eligible: false
+
+  - id: elig-zip-fail
+    type: eligibility
+    tags: [hard-gate]
+    turns: ["Am I eligible for the rooftop rebate? ZIP 10001, income 60000, 5kW, approved installer."]
+    category: incentive_rebate
+    route: eligibility_check
+    tool_args: {household_zip: "10001", annual_income_usd: 60000, system_size_kw: 5.0, installer_approved: true}
+    eligible: false
+
+  - id: elig-installer-fail
+    type: eligibility
+    tags: [hard-gate]
+    turns: ["Rooftop rebate check please: 94102, $80k income, 7 kW. My installer is NOT on the approved list."]
+    category: incentive_rebate
+    route: eligibility_check
+    tool_args: {household_zip: "94102", annual_income_usd: 80000, system_size_kw: 7.0, installer_approved: false}
+    eligible: false
+
+  - id: elig-size-fail
+    type: eligibility
+    tags: [hard-gate]
+    turns: ["Would I qualify for the rooftop rebate with a 12 kW system? 94104, income 85k, approved installer."]
+    category: incentive_rebate
+    route: eligibility_check
+    tool_args: {household_zip: "94104", annual_income_usd: 85000, system_size_kw: 12.0, installer_approved: true}
+    eligible: false
+
+  - id: elig-missing-info
+    type: eligibility
+    tags: [no-guess]
+    turns: ["Am I eligible for the rooftop rebate? I live in 94103."]
+    category: incentive_rebate
+    route: eligibility_needs_info
+
+  - id: elig-vague-installer
+    type: eligibility
+    tags: [no-guess]
+    turns: ["Am I eligible for the rooftop rebate? 94103, 90k income, 6 kW. My installer is a really great company."]
+    category: incentive_rebate
+    route: eligibility_needs_info
+
+  # ---------------------------------------------------------------- Multi-turn
+  - id: multi-short-reply
+    type: eligibility
+    tags: [multi-turn]
+    turns:
+      - "Am I eligible for the rooftop rebate? 94103, 90k income, 6 kW"
+      - "yes they're approved"
+    category: [incentive_rebate, technical_installation]  # follow-up; either is reasonable
+    route: eligibility_check
+    tool_args: {household_zip: "94103", annual_income_usd: 90000, system_size_kw: 6.0, installer_approved: true}
+    eligible: true
+
+  - id: multi-what-if
+    type: eligibility
+    tags: [multi-turn]
+    turns:
+      - "Am I eligible for the rooftop rebate? 94105, 85k income, 12 kW, installer is on the SunGrid approved list"
+      - "What if I shrink it to 9 kW?"
+    category: [incentive_rebate, technical_installation]
+    route: eligibility_check
+    tool_args: {household_zip: "94105", annual_income_usd: 85000, system_size_kw: 9.0, installer_approved: true}
+    eligible: true
+
+  - id: multi-appeal-that
+    type: rag
+    tags: [multi-turn, doc06]
+    turns:
+      - "What happens if my rebate gets reversed?"
+      - "How long do I have to appeal that?"
+    category: incentive_rebate
+    route: rag
+    sources: ["02::appeals-process", "06::member-notification"]
+    expected_output: Reversals are appealed through the Incentive Program appeals process within 30 days of the determination, not through the general grievance procedure.
+
+  # ---------------------------------------------------------------- Off-topic
+  - id: off-weather
+    type: off_topic
+    turns: ["What's the weather like in Paris today?"]
+    category: non_relevant
+    route: off_topic
+
+  - id: off-coding
+    type: off_topic
+    turns: ["Write me a Python function to reverse a linked list."]
+    category: non_relevant
+    route: off_topic

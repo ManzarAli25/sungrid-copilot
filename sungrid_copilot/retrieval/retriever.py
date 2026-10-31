@@ -9,9 +9,13 @@ from sungrid_copilot.embeddings import embed_query
 from sungrid_copilot.vectorstore import get_client
 
 TOP_K = 5
-# If the best filtered hit is weaker than this, the filter probably excluded the answer
-# (misclassification), so we search again without it.
+# The filter is overridden (unfiltered results used) when either:
+# - absolute: the best filtered hit is weaker than MIN_TOP_SCORE, or
+# - relative: the best hit outside the filter beats the best filtered hit by OVERRIDE_MARGIN.
+# Found by the golden set: "What rebate will the new multi-family tier get?" is confidently
+# classified incentive_rebate (0.98), but the answer is in Company Updates (0.669 vs 0.530).
 MIN_TOP_SCORE = 0.45
+OVERRIDE_MARGIN = 0.10
 
 
 @dataclass
@@ -51,9 +55,16 @@ def _search(vector: list[float], categories: list[str] | None, k: int) -> list[R
     ]
 
 
+def should_override_filter(filtered: list[RetrievedChunk], unfiltered: list[RetrievedChunk]) -> bool:
+    if not filtered or filtered[0].score < MIN_TOP_SCORE:
+        return True
+    return bool(unfiltered) and unfiltered[0].score - filtered[0].score >= OVERRIDE_MARGIN
+
+
 def retrieve(query: str, categories: list[str], k: int = TOP_K) -> RetrievalResult:
-    vector = embed_query(query)
-    chunks = _search(vector, categories, k)
-    if chunks and chunks[0].score >= MIN_TOP_SCORE:
-        return RetrievalResult(chunks, categories, used_fallback=False)
-    return RetrievalResult(_search(vector, None, k), categories, used_fallback=True)
+    vector = embed_query(query)  # embedded once; both searches reuse it
+    filtered = _search(vector, categories, k)
+    unfiltered = _search(vector, None, k)
+    if should_override_filter(filtered, unfiltered):
+        return RetrievalResult(unfiltered, categories, used_fallback=True)
+    return RetrievalResult(filtered, categories, used_fallback=False)

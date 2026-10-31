@@ -57,7 +57,7 @@ def select_filter_categories(probabilities: dict[str, float], mode: str = "widen
 # --- Jev backend --------------------------------------------------------------------------
 
 
-def classify_with_jev(query: str) -> Classification:
+def classify_with_jev(query: str, mode: str | None = None) -> Classification:
     from typesafe_sdk import Choice, TypeSafeClient
 
     s = get_settings()
@@ -69,7 +69,7 @@ def classify_with_jev(query: str) -> Classification:
     answer = response.choices["category"]
     return Classification(
         primary=answer.choice,
-        filter_categories=select_filter_categories(answer.probabilities, s.filter_mode),
+        filter_categories=select_filter_categories(answer.probabilities, mode or s.filter_mode),
         probabilities=dict(answer.probabilities),
         backend="jev",
     )
@@ -86,7 +86,7 @@ class _LLMClassification(BaseModel):
     )
 
 
-def classify_with_llm(query: str) -> Classification:
+def classify_with_llm(query: str, mode: str | None = None) -> Classification:
     from sungrid_copilot.llm import get_chat_model
 
     descriptions = category_descriptions()
@@ -102,7 +102,7 @@ def classify_with_llm(query: str) -> Classification:
     primary = result.primary if result.primary in descriptions else NON_RELEVANT
     if primary == NON_RELEVANT:
         filters: list[str] = []
-    elif get_settings().filter_mode == "strict":
+    elif (mode or get_settings().filter_mode) == "strict":
         filters = [primary]
     else:
         extras = [c for c in result.also_relevant if c in descriptions and c not in (primary, NON_RELEVANT)]
