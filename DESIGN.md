@@ -127,3 +127,46 @@ standalone question with context, not the raw message.
 
 Not covered here: login and handling of members' personal data, the monitoring itself (we
 record the signals but don't send them anywhere yet), multiple languages, and load testing.
+
+## Appendix: agent graph
+
+The LangGraph graph, generated from the compiled agent (same as in the README). Solid arrows
+are fixed edges, dashed arrows are conditional ones.
+
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	contextualize(contextualize)
+	classify(classify)
+	detect_intent(detect_intent)
+	extract_params(extract_params)
+	ask_for_missing(ask_for_missing)
+	check_eligibility(check_eligibility)
+	compose_verdict(compose_verdict)
+	retrieve(retrieve)
+	generate_answer(generate_answer)
+	decline(decline)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> contextualize;
+	check_eligibility --> compose_verdict;
+	classify --> detect_intent;
+	contextualize --> classify;
+	detect_intent -. &nbsp;off_topic&nbsp; .-> decline;
+	detect_intent -. &nbsp;eligibility&nbsp; .-> extract_params;
+	detect_intent -. &nbsp;general&nbsp; .-> retrieve;
+	extract_params -. &nbsp;missing&nbsp; .-> ask_for_missing;
+	extract_params -. &nbsp;complete&nbsp; .-> check_eligibility;
+	retrieve --> generate_answer;
+	ask_for_missing --> __end__;
+	compose_verdict --> __end__;
+	decline --> __end__;
+	generate_answer --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+```
