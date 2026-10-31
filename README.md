@@ -220,4 +220,4 @@ tool directly, because tool-calling models tend to fill required arguments with 
 
 ## Design doc
 
-*TODO*: see `DESIGN.md`.
+See [`DESIGN.md`](DESIGN.md): evaluation (offline and online), what breaks at 10x documents or 100x queries, adding a new category, and the main trade-off (classifying with a decision model instead of an LLM).
