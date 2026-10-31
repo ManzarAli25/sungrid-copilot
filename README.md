@@ -5,7 +5,8 @@ questions with retrieval-augmented generation over an internal knowledge base, a
 a separate eligibility service for rebate-eligibility questions instead of answering them
 from documents.
 
-> 🚧 Work in progress. Sections marked *TODO* are filled in as each part is built.
+**Live demo:** https://sungrid-copilot.onrender.com (password-protected; available on request.
+Free tier, so the first load after a period of inactivity can take up to a minute.)
 
 ## Stack
 
